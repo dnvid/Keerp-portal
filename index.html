@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Keerp · Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --lime: #CCFF00;
+    --bg: #121212;
+    --text: #F7FAFC;
+    --text-dim: rgba(247,250,252,0.62);
+    --text-faint: rgba(247,250,252,0.38);
+    --glass: rgba(255,255,255,0.06);
+    --glass-strong: rgba(255,255,255,0.09);
+    --border: rgba(255,255,255,0.13);
+    --shadow: 0 40px 80px -20px rgba(0,0,0,0.85);
+    --glow: rgba(204,255,0,0.15);
+    --ease: cubic-bezier(0.22,1,0.36,1);
+    --r: 28px;
+    --r-pill: 50px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+
+  /* Canvas */
+  .bg-layer { position:fixed; inset:0; background:var(--bg); z-index:0; }
+  .glow-blob { position:fixed; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle, var(--glow), transparent 70%); filter:blur(80px); top:-200px; right:-150px; z-index:1; pointer-events:none; }
+
+  /* Center wrapper */
+  .center { position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center; padding:20px; }
+
+  /* Glass card */
+  .card {
+    width:100%; max-width:400px; background:var(--glass-strong);
+    border:1px solid var(--border); border-radius:var(--r);
+    backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+    box-shadow:var(--shadow); padding:40px 32px; text-align:center;
+    animation: fadeUp .5s var(--ease) both;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
+
+  /* Logo */
+  .logo { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.8rem; letter-spacing:-0.04em; display:inline-flex; align-items:center; gap:3px; color:var(--text); margin-bottom:6px; }
+  .logo .k-accent { display:inline-block; width:.28em; height:.75em; background:var(--lime); transform:skewX(-16deg); margin-right:.08em; border-radius:2px; box-shadow:0 0 16px rgba(204,255,0,.35); }
+  .tagline { font-size:.85rem; color:var(--text-faint); letter-spacing:.04em; text-transform:uppercase; font-weight:600; margin-bottom:32px; }
+
+  /* Divider */
+  .divider { height:1px; background:var(--border); margin:28px 0; }
+
+  /* Buttons */
+  .btn { width:100%; padding:14px 20px; border-radius:var(--r-pill); border:none; font-family:'Inter',sans-serif; font-weight:600; font-size:.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:transform .25s var(--ease), box-shadow .25s var(--ease); }
+  .btn-google { background:var(--lime); color:#121212; }
+  .btn-google:hover { transform:translateY(-2px); box-shadow:0 12px 32px -8px rgba(204,255,0,.4); }
+  .btn-ghost { background:var(--glass); color:var(--text-dim); border:1px solid var(--border); margin-top:10px; }
+  .btn-ghost:hover { background:var(--glass-strong); color:var(--text); }
+  .btn-primary { background:var(--lime); color:#121212; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 12px 32px -8px rgba(204,255,0,.4); }
+  .btn[disabled] { opacity:.5; cursor:default; pointer-events:none; }
+
+  /* Note */
+  .note { font-size:.78rem; color:var(--text-faint); margin-top:18px; line-height:1.5; }
+
+  /* Spinner */
+  .spinner { width:44px; height:44px; border:3px solid var(--border); border-top-color:var(--lime); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 20px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Avatar */
+  .avatar { width:64px; height:64px; border-radius:50%; border:2px solid var(--border); margin:0 auto 16px; display:block; background:var(--glass); }
+
+  /* Welcome / Gate headings */
+  .state-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.4rem; letter-spacing:-0.02em; margin-bottom:8px; }
+  .state-sub { font-size:.9rem; color:var(--text-dim); line-height:1.6; margin-bottom:24px; }
+
+  /* Gate icon */
+  .gate-icon { width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,.05); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+
+  /* Lime chip */
+  .chip { display:inline-block; background:rgba(204,255,0,.12); border:1px solid rgba(204,255,0,.3); color:var(--lime); font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:4px 12px; border-radius:var(--r-pill); margin-bottom:16px; }
+
+  /* States — hidden by default */
+  .state { display:none; }
+  .state.active { display:block; }
+
+  /* Mobile */
+  @media (max-width:480px) { .card { padding:32px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="glow-blob"></div>
+
+<div class="center">
+  <div class="card">
+
+    <!-- STATE: Login -->
+    <div class="state active" id="s-login">
+      <div class="logo"><span class="k-accent"></span>Keerp</div>
+      <p class="tagline">Plataforma de performance</p>
+      <div class="divider"></div>
+      <button class="btn btn-google" id="btnGoogle">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        Entrar com Google
+      </button>
+      <p class="note">Acesso restrito a clientes ativos da Keerp.<br>Ainda não tem acesso? <a href="https://dnvid.github.io/keerp-LP/" style="color:var(--lime);text-decoration:none;">Solicite aqui.</a></p>
+    </div>
+
+    <!-- STATE: Verificando -->
+    <div class="state" id="s-checking">
+      <div class="spinner"></div>
+      <p style="color:var(--text-dim); font-size:.95rem;">Verificando seu acesso...</p>
+    </div>
+
+    <!-- STATE: Bem-vindo (whitelisted) -->
+    <div class="state" id="s-welcome">
+      <div class="chip">Acesso liberado</div>
+      <img class="avatar" id="userAvatar" alt="Foto do perfil" src="">
+      <div class="state-title" id="userName">Olá!</div>
+      <p class="state-sub" id="userEmail"></p>
+      <a class="btn btn-primary" id="btnPortal" href="dashboard.html">Entrar no portal →</a>
+      <button class="btn btn-ghost" id="btnSignOut1">Sair</button>
+    </div>
+
+    <!-- STATE: Gate (não está na whitelist) -->
+    <div class="state" id="s-gate">
+      <div class="gate-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(247,250,252,.4)" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="state-title">Acesso sendo configurado</div>
+      <p class="state-sub">Seu cadastro está em análise. Em breve nossa equipe vai te enviar as instruções de acesso via WhatsApp.</p>
+      <button class="btn btn-ghost" id="btnSignOut2">Sair e usar outra conta</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Supabase JS v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ─── CONFIG ───────────────────────────────────────
+// A chave anon é segura no frontend — o Supabase protege os dados via RLS.
+const SUPA_URL = 'https://ajgeeuezpfxhsjmankne.supabase.co'
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZ2VldWV6cGZ4aHNqbWFua25lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzc3NzgsImV4cCI6MjA5NTkxMzc3OH0.KDRLr0UWxsvfYUnW6ImC3d5GEPJRY0Qxx8q-ghzQeWA'
+// ──────────────────────────────────────────────────
+
+const { createClient } = supabase
+const sb = createClient(SUPA_URL, SUPA_KEY)
+
+// ─── STATE MANAGER ────────────────────────────────
+function setState(name) {
+  document.querySelectorAll('.state').forEach(el => el.classList.remove('active'))
+  const el = document.getElementById('s-' + name)
+  if (el) el.classList.add('active')
+}
+
+// ─── WHITELIST CHECK ──────────────────────────────
+async function checkWhitelist(session) {
+  setState('checking')
+  const { data } = await sb
+    .from('whitelist')
+    .select('email')
+    .eq('email', session.user.email)
+    .maybeSingle()
+
+  if (data) {
+    // Usuário está na whitelist
+    const meta = session.user.user_metadata || {}
+    const avatar = document.getElementById('userAvatar')
+    const nameEl = document.getElementById('userName')
+    const emailEl = document.getElementById('userEmail')
+    if (avatar && meta.avatar_url) { avatar.src = meta.avatar_url }
+    if (nameEl) nameEl.textContent = 'Olá, ' + (meta.full_name || meta.name || 'bem-vindo') + '!'
+    if (emailEl) emailEl.textContent = session.user.email
+    setState('welcome')
+  } else {
+    // Usuário não está na whitelist
+    setState('gate')
+  }
+}
+
+// ─── AUTH STATE LISTENER ──────────────────────────
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session) {
+    await checkWhitelist(session)
+  } else {
+    setState('login')
+  }
+})
+
+// ─── GOOGLE SIGN-IN ───────────────────────────────
+document.getElementById('btnGoogle').addEventListener('click', async () => {
+  const btn = document.getElementById('btnGoogle')
+  btn.disabled = true
+  btn.textContent = 'Aguarde...'
+  const redirectTo = window.location.origin + window.location.pathname
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  })
+  if (error) {
+    btn.disabled = false
+    btn.innerHTML = '<span style="color:#ff6b6b">Erro: ' + error.message + '</span>'
+  }
+})
+
+// ─── SIGN OUT ─────────────────────────────────────
+async function signOut() {
+  await sb.auth.signOut()
+  setState('login')
+}
+document.getElementById('btnSignOut1').addEventListener('click', signOut)
+document.getElementById('btnSignOut2').addEventListener('click', signOut)
+</script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Keerp · Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --lime:#CCFF00; --bg:#121212; --text:#F7FAFC;
+    --text-dim:rgba(247,250,252,.62); --text-faint:rgba(247,250,252,.38);
+    --glass:rgba(255,255,255,.06); --glass-strong:rgba(255,255,255,.09);
+    --border:rgba(255,255,255,.13); --shadow:0 32px 64px -20px rgba(0,0,0,.8);
+    --glow:rgba(204,255,0,.12); --ease:cubic-bezier(.22,1,.36,1);
+    --r:24px; --r-pill:50px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { min-height:100%; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  .bg-layer { position:fixed; inset:0; background:var(--bg); z-index:0; }
+  .glow-blob { position:fixed; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,var(--glow),transparent 70%); filter:blur(80px); top:-150px; right:-100px; z-index:1; pointer-events:none; }
+
+  /* Layout */
+  .layout { position:relative; z-index:2; display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
+
+  /* Sidebar */
+  .sidebar { padding:28px 20px; border-right:1px solid var(--border); background:var(--glass); backdrop-filter:blur(20px); display:flex; flex-direction:column; gap:8px; }
+  .logo { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.5rem; letter-spacing:-0.04em; display:flex; align-items:center; gap:3px; color:var(--text); margin-bottom:24px; padding:0 8px; }
+  .logo .k-accent { display:inline-block; width:.28em; height:.75em; background:var(--lime); transform:skewX(-16deg); margin-right:.08em; border-radius:2px; }
+  .nav-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; color:var(--text-dim); font-size:.9rem; font-weight:500; cursor:pointer; transition:background .2s, color .2s; }
+  .nav-item:hover { background:var(--glass-strong); color:var(--text); }
+  .nav-item.active { background:rgba(204,255,0,.1); color:var(--lime); }
+  .nav-item svg { width:18px; height:18px; flex-shrink:0; }
+  .sidebar-bottom { margin-top:auto; padding-top:20px; border-top:1px solid var(--border); }
+  .user-pill { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; }
+  .user-pill img { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--glass); }
+  .user-pill .info { flex:1; min-width:0; }
+  .user-pill .info p { font-size:.82rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .user-pill .info span { font-size:.72rem; color:var(--text-faint); }
+  .btn-out { background:none; border:1px solid var(--border); border-radius:var(--r-pill); padding:6px 14px; color:var(--text-faint); font-size:.78rem; cursor:pointer; margin-top:10px; width:100%; }
+  .btn-out:hover { border-color:var(--lime); color:var(--lime); }
+
+  /* Main */
+  .main { padding:36px 40px; }
+  .page-header { margin-bottom:32px; }
+  .page-header h1 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.8rem; letter-spacing:-0.03em; margin-bottom:4px; }
+  .page-header p { color:var(--text-dim); font-size:.95rem; }
+
+  /* Coming soon card */
+  .soon-card {
+    background:var(--glass-strong); border:1px solid var(--border); border-radius:var(--r);
+    backdrop-filter:blur(20px); padding:48px; text-align:center;
+    animation:fadeUp .5s var(--ease) both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+  .soon-icon { width:72px; height:72px; border-radius:50%; background:rgba(204,255,0,.1); border:1px solid rgba(204,255,0,.25); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+  .soon-icon svg { width:32px; height:32px; stroke:var(--lime); }
+  .soon-card h2 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.4rem; letter-spacing:-0.02em; margin-bottom:10px; }
+  .soon-card p { color:var(--text-dim); font-size:.95rem; line-height:1.7; max-width:440px; margin:0 auto; }
+  .progress-list { margin:28px auto; max-width:400px; text-align:left; display:flex; flex-direction:column; gap:10px; }
+  .prog-item { display:flex; align-items:center; gap:12px; font-size:.88rem; }
+  .prog-item .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dot-done { background:var(--lime); }
+  .dot-wip { background:rgba(204,255,0,.4); }
+  .dot-todo { background:var(--border); }
+
+  /* Mobile */
+  @media (max-width:768px) {
+    .layout { grid-template-columns:1fr; }
+    .sidebar { display:none; }
+    .main { padding:24px 20px; }
+  }
+
+  /* Auth guard overlay */
+  #authGuard { position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="glow-blob"></div>
+
+<!-- Auth guard (shown while checking session) -->
+<div id="authGuard">
+  <div style="text-align:center;">
+    <div style="width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--lime);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;"></div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    <p style="color:var(--text-faint);font-size:.9rem;">Verificando sessão...</p>
+  </div>
+</div>
+
+<div class="layout" id="app" style="display:none;">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo"><span class="k-accent"></span>Keerp</div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+      Scores
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12c1 1 1 2 1 4h6c0-2 0-3 1-4a7 7 0 0 0-4-12z"/></svg>
+      KeerpIA
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Upload Excel
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+      Configurações
+    </div>
+    <div class="sidebar-bottom">
+      <div class="user-pill">
+        <img id="sideAvatar" src="" alt="Avatar" />
+        <div class="info">
+          <p id="sideName">Carregando...</p>
+          <span id="sideEmail">—</span>
+        </div>
+      </div>
+      <button class="btn-out" id="btnSignOut">Sair</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="page-header">
+      <h1>Bem-vindo ao portal, <span id="mainName">—</span></h1>
+      <p>Seu dashboard de inteligência operacional está sendo preparado.</p>
+    </div>
+
+    <div class="soon-card">
+      <div class="soon-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h2>Dashboard em construção</h2>
+      <p>A autenticação está funcionando. Agora vamos construir as telas da plataforma uma a uma. Veja o que já está pronto e o que vem a seguir:</p>
+
+      <div class="progress-list">
+        <div class="prog-item"><div class="dot dot-done"></div><span>✓ Schema do banco de dados (Supabase)</span></div>
+        <div class="prog-item"><div class="dot dot-done"></div><span>✓ Autenticação com Google</span></div>
+        <div class="prog-item"><div class="dot dot-done"></div><span>✓ Onboarding Gate (whitelist)</span></div>
+        <div class="prog-item"><div class="dot dot-wip"></div><span>→ Dashboard com os 6 scores</span></div>
+        <div class="prog-item"><div class="dot dot-todo"></div><span>○ Upload de Excel (picking + frete)</span></div>
+        <div class="prog-item"><div class="dot dot-todo"></div><span>○ Interface da KeerpIA</span></div>
+        <div class="prog-item"><div class="dot dot-todo"></div><span>○ Conexão de APIs (OAuth)</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = 'https://ajgeeuezpfxhsjmankne.supabase.co'
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZ2VldWV6cGZ4aHNqbWFua25lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzc3NzgsImV4cCI6MjA5NTkxMzc3OH0.KDRLr0UWxsvfYUnW6ImC3d5GEPJRY0Qxx8q-ghzQeWA'
+const { createClient } = supabase
+const sb = createClient(SUPA_URL, SUPA_KEY)
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (!session) {
+    window.location.href = 'index.html'
+    return
+  }
+  const meta = session.user.user_metadata || {}
+  const nome = meta.full_name || meta.name || session.user.email.split('@')[0]
+  const primeiroNome = nome.split(' ')[0]
+
+  document.getElementById('mainName').textContent = primeiroNome
+  document.getElementById('sideName').textContent = nome
+  document.getElementById('sideEmail').textContent = session.user.email
+  const av = meta.avatar_url || ''
+  if (av) { document.getElementById('sideAvatar').src = av }
+
+  document.getElementById('authGuard').style.display = 'none'
+  document.getElementById('app').style.display = 'grid'
+})
+
+document.getElementById('btnSignOut').addEventListener('click', async () => {
+  await sb.auth.signOut()
+  window.location.href = 'index.html'
+})
+</script>
+</body>
+</html>

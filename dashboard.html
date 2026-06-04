@@ -4,184 +4,395 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Keerp · Portal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root {
-    --lime:#CCFF00; --bg:#121212; --text:#F7FAFC;
-    --text-dim:rgba(247,250,252,.62); --text-faint:rgba(247,250,252,.38);
-    --glass:rgba(255,255,255,.06); --glass-strong:rgba(255,255,255,.09);
-    --border:rgba(255,255,255,.13); --shadow:0 32px 64px -20px rgba(0,0,0,.8);
-    --glow:rgba(204,255,0,.12); --ease:cubic-bezier(.22,1,.36,1);
-    --r:24px; --r-pill:50px;
+  :root{
+    --lime:#CCFF00;
+    --lime-dim:#a3cc00;
+    --bg:#121212;
+    --bg-2:#181818;
+    --text:#F7FAFC;
+    --text-dim:rgba(247,250,252,.62);
+    --text-faint:rgba(247,250,252,.38);
+    --glass:rgba(255,255,255,.06);
+    --glass-strong:rgba(255,255,255,.09);
+    --border:rgba(255,255,255,.13);
+    --border-soft:rgba(255,255,255,.07);
+    --shadow:0 40px 80px -20px rgba(0,0,0,.85);
+    --glow:rgba(204,255,0,.15);
+    --ease:cubic-bezier(0,.22,1,.36);
+    --danger:#ff6b5e;
+    --warn:#ffce4d;
+    --r:28px;
+    --r-pill:50px;
+    --sidebar:248px;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html,body { min-height:100%; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
-  .bg-layer { position:fixed; inset:0; background:var(--bg); z-index:0; }
-  .glow-blob { position:fixed; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,var(--glow),transparent 70%); filter:blur(80px); top:-150px; right:-100px; z-index:1; pointer-events:none; }
-
-  /* Layout */
-  .layout { position:relative; z-index:2; display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
-
-  /* Sidebar */
-  .sidebar { padding:28px 20px; border-right:1px solid var(--border); background:var(--glass); backdrop-filter:blur(20px); display:flex; flex-direction:column; gap:8px; }
-  .logo { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.5rem; letter-spacing:-0.04em; display:flex; align-items:center; gap:3px; color:var(--text); margin-bottom:24px; padding:0 8px; }
-  .logo .k-accent { display:inline-block; width:.28em; height:.75em; background:var(--lime); transform:skewX(-16deg); margin-right:.08em; border-radius:2px; }
-  .nav-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; color:var(--text-dim); font-size:.9rem; font-weight:500; cursor:pointer; transition:background .2s, color .2s; }
-  .nav-item:hover { background:var(--glass-strong); color:var(--text); }
-  .nav-item.active { background:rgba(204,255,0,.1); color:var(--lime); }
-  .nav-item svg { width:18px; height:18px; flex-shrink:0; }
-  .sidebar-bottom { margin-top:auto; padding-top:20px; border-top:1px solid var(--border); }
-  .user-pill { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; }
-  .user-pill img { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--glass); }
-  .user-pill .info { flex:1; min-width:0; }
-  .user-pill .info p { font-size:.82rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .user-pill .info span { font-size:.72rem; color:var(--text-faint); }
-  .btn-out { background:none; border:1px solid var(--border); border-radius:var(--r-pill); padding:6px 14px; color:var(--text-faint); font-size:.78rem; cursor:pointer; margin-top:10px; width:100%; }
-  .btn-out:hover { border-color:var(--lime); color:var(--lime); }
-
-  /* Main */
-  .main { padding:36px 40px; }
-  .page-header { margin-bottom:32px; }
-  .page-header h1 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.8rem; letter-spacing:-0.03em; margin-bottom:4px; }
-  .page-header p { color:var(--text-dim); font-size:.95rem; }
-
-  /* Coming soon card */
-  .soon-card {
-    background:var(--glass-strong); border:1px solid var(--border); border-radius:var(--r);
-    backdrop-filter:blur(20px); padding:48px; text-align:center;
-    animation:fadeUp .5s var(--ease) both;
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(900px 520px at 82% -12%, var(--glow), transparent 60%),
+      radial-gradient(680px 600px at -8% 112%, rgba(204,255,0,.05), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
   }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
-  .soon-icon { width:72px; height:72px; border-radius:50%; background:rgba(204,255,0,.1); border:1px solid rgba(204,255,0,.25); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
-  .soon-icon svg { width:32px; height:32px; stroke:var(--lime); }
-  .soon-card h2 { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:1.4rem; letter-spacing:-0.02em; margin-bottom:10px; }
-  .soon-card p { color:var(--text-dim); font-size:.95rem; line-height:1.7; max-width:440px; margin:0 auto; }
-  .progress-list { margin:28px auto; max-width:400px; text-align:left; display:flex; flex-direction:column; gap:10px; }
-  .prog-item { display:flex; align-items:center; gap:12px; font-size:.88rem; }
-  .prog-item .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .dot-done { background:var(--lime); }
-  .dot-wip { background:rgba(204,255,0,.4); }
-  .dot-todo { background:var(--border); }
+  h1,h2,h3,.brand b,.ring .val b,.card .scoreline b{font-family:'Plus Jakarta Sans',sans-serif}
 
-  /* Mobile */
-  @media (max-width:768px) {
-    .layout { grid-template-columns:1fr; }
-    .sidebar { display:none; }
-    .main { padding:24px 20px; }
+  /* GATE / LOADING */
+  #gate{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:18px;background:var(--bg);z-index:99;transition:opacity .4s}
+  .spinner{width:34px;height:34px;border:3px solid rgba(204,255,0,.2);border-top-color:var(--lime);
+    border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #gate p{color:var(--text-dim);font-size:14px;letter-spacing:.02em}
+
+  /* LAYOUT */
+  .shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh;opacity:0;transition:opacity .5s}
+  .shell.ready{opacity:1}
+
+  /* SIDEBAR */
+  aside{border-right:1px solid var(--border-soft);padding:28px 18px;display:flex;flex-direction:column;
+    gap:8px;position:sticky;top:0;height:100vh;
+    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
+  .brand{display:flex;align-items:center;gap:11px;padding:0 8px 24px;margin-bottom:4px}
+  .brand .mark{width:30px;height:30px;border-radius:9px;background:var(--lime);display:grid;
+    place-items:center;color:#0d0d0d;font-weight:800;font-size:17px;
+    box-shadow:0 0 26px var(--glow);font-family:'Plus Jakarta Sans'}
+  .brand b{font-size:20px;font-weight:800;letter-spacing:-.02em}
+  nav a{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;
+    color:var(--text-dim);text-decoration:none;font-size:14.5px;font-weight:500;transition:.2s var(--ease)}
+  nav a svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8}
+  nav a:hover{color:var(--text);background:var(--glass)}
+  nav a.active{color:#0d0d0d;background:var(--lime);font-weight:700;box-shadow:0 6px 20px var(--glow)}
+  nav a.soon{opacity:.5}
+  nav a.soon::after{content:'em breve';margin-left:auto;font-size:9.5px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--text-faint);border:1px solid var(--border-soft);padding:2px 6px;border-radius:6px}
+  .side-foot{margin-top:auto;display:flex;flex-direction:column;gap:14px;padding-top:18px;border-top:1px solid var(--border-soft)}
+  .user{display:flex;align-items:center;gap:11px;padding:0 6px}
+  .user img,.user .avatar-ph{width:36px;height:36px;border-radius:11px;object-fit:cover;background:var(--glass-strong);
+    display:grid;place-items:center;font-weight:700;color:var(--lime);font-size:14px;font-family:'Plus Jakarta Sans'}
+  .user .meta{overflow:hidden}
+  .user .meta b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;max-width:130px;font-family:'Plus Jakarta Sans'}
+  .user .meta span{font-size:11.5px;color:var(--text-faint)}
+  .logout{background:none;border:1px solid var(--border-soft);color:var(--text-dim);padding:9px;border-radius:12px;
+    font:inherit;font-size:13px;cursor:pointer;transition:.2s}
+  .logout:hover{border-color:var(--danger);color:var(--danger)}
+
+  /* MAIN */
+  main{padding:40px 48px 64px;max-width:1180px}
+  .topline{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:34px}
+  .topline h1{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+  .topline h1 span{color:var(--lime)}
+  .topline .sub{color:var(--text-dim);font-size:14.5px;margin-top:6px}
+  .demo-badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--warn);
+    background:rgba(255,206,77,.08);border:1px solid rgba(255,206,77,.25);padding:7px 13px;border-radius:var(--r-pill)}
+  .demo-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--warn)}
+
+  /* IMEK HERO */
+  .hero{display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center;
+    background:linear-gradient(135deg,rgba(204,255,0,.06),rgba(204,255,0,.02));
+    border:1px solid var(--border);border-radius:var(--r);padding:34px 38px;margin-bottom:26px;
+    position:relative;overflow:hidden;box-shadow:var(--shadow)}
+  .hero::after{content:'';position:absolute;right:-80px;top:-90px;width:280px;height:280px;
+    background:radial-gradient(circle,var(--glow),transparent 70%);pointer-events:none}
+  .ring{position:relative;width:158px;height:158px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .val b{font-size:46px;font-weight:800;letter-spacing:-.04em;line-height:1}
+  .ring .val small{font-size:11px;color:var(--text-dim);letter-spacing:.18em;text-transform:uppercase;margin-top:3px}
+  .hero-info .label{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--lime);font-weight:700;margin-bottom:8px}
+  .hero-info h2{font-size:27px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .hero-info p{color:var(--text-dim);font-size:14.5px;max-width:430px;line-height:1.55}
+  .level-track{display:flex;gap:5px;margin-top:18px;max-width:340px}
+  .level-track .seg{flex:1;height:6px;border-radius:4px;background:var(--glass-strong)}
+  .level-track .seg.on{background:var(--lime);box-shadow:0 0 10px var(--glow)}
+
+  /* SCORE GRID */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--glass);border:1px solid var(--border-soft);border-radius:var(--r);padding:22px;
+    cursor:pointer;transition:.25s var(--ease);position:relative;overflow:hidden;opacity:0;transform:translateY(14px)}
+  .card.in{opacity:1;transform:none}
+  .card:hover{border-color:var(--border);background:var(--glass-strong);transform:translateY(-3px)}
+  .card .ic{width:38px;height:38px;border-radius:12px;background:rgba(204,255,0,.10);display:grid;place-items:center;margin-bottom:16px}
+  .card .ic svg{width:20px;height:20px;stroke:var(--lime);fill:none;stroke-width:1.8}
+  .card h3{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:3px}
+  .card .src{font-size:11.5px;color:var(--text-faint);margin-bottom:18px}
+  .card .scoreline{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+  .card .scoreline b{font-size:34px;font-weight:800;letter-spacing:-.04em}
+  .card .scoreline em{font-size:13px;font-style:normal;color:var(--text-dim)}
+  .card .lvl{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .bar{height:6px;border-radius:4px;background:var(--glass-strong);overflow:hidden;margin-top:14px}
+  .bar i{display:block;height:100%;border-radius:4px;width:0;transition:width 1.1s var(--ease)}
+
+  /* RADAR */
+  .panel{background:var(--glass);border:1px solid var(--border-soft);border-radius:var(--r);padding:26px 28px;margin-top:24px}
+  .panel h3{font-size:16px;font-weight:700;margin-bottom:4px}
+  .panel .ph{font-size:13px;color:var(--text-dim);margin-bottom:18px}
+  .radar-wrap{display:flex;justify-content:center}
+  #radar{width:100%;max-width:480px;height:auto}
+
+  .updated{margin-top:30px;font-size:12.5px;color:var(--text-faint);text-align:center}
+
+  @media (max-width:880px){
+    :root{--sidebar:0px}
+    aside{display:none}
+    .shell{grid-template-columns:1fr}
+    main{padding:26px 20px 50px}
+    .hero{grid-template-columns:1fr;text-align:center;justify-items:center;gap:24px}
+    .grid{grid-template-columns:1fr}
+    .level-track,.hero-info p{margin-left:auto;margin-right:auto}
   }
-
-  /* Auth guard overlay */
-  #authGuard { position:fixed; inset:0; z-index:100; background:var(--bg); display:flex; align-items:center; justify-content:center; }
 </style>
 </head>
 <body>
-<div class="bg-layer"></div>
-<div class="glow-blob"></div>
 
-<!-- Auth guard (shown while checking session) -->
-<div id="authGuard">
-  <div style="text-align:center;">
-    <div style="width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--lime);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;"></div>
-    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-    <p style="color:var(--text-faint);font-size:.9rem;">Verificando sessão...</p>
-  </div>
-</div>
+<div id="gate"><div class="spinner"></div><p>Verificando sessão…</p></div>
 
-<div class="layout" id="app" style="display:none;">
-
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="logo"><span class="k-accent"></span>Keerp</div>
-    <div class="nav-item active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
-      Scores
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12c1 1 1 2 1 4h6c0-2 0-3 1-4a7 7 0 0 0-4-12z"/></svg>
-      KeerpIA
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Upload Excel
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-      Configurações
-    </div>
-    <div class="sidebar-bottom">
-      <div class="user-pill">
-        <img id="sideAvatar" src="" alt="Avatar" />
-        <div class="info">
-          <p id="sideName">Carregando...</p>
-          <span id="sideEmail">—</span>
-        </div>
+<div class="shell" id="shell">
+  <aside>
+    <div class="brand"><div class="mark">K</div><b>Keerp</b></div>
+    <nav>
+      <a class="active" href="painel.html">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard</a>
+      <a class="soon" href="#">
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        Scores</a>
+      <a class="soon" href="#">
+        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9c0 4 3 7 9 9 6-2 9-5 9-9a9 9 0 0 0-9-9z"/><circle cx="12" cy="11" r="2.5"/></svg>
+        KeerpIA</a>
+      <a class="soon" href="#">
+        <svg viewBox="0 0 24 24"><path d="M14 3v5h5"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M12 17v-6m-3 3l3-3 3 3"/></svg>
+        Upload Excel</a>
+      <a class="soon" href="#">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1L16.5 3h-4l-.4 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4L5.1 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5a7 7 0 0 0 .1-1z"/></svg>
+        Configurações</a>
+    </nav>
+    <div class="side-foot">
+      <div class="user">
+        <div class="avatar-ph" id="avatar">—</div>
+        <div class="meta"><b id="uname">Carregando…</b><span id="uorg">Cliente Keerp</span></div>
       </div>
-      <button class="btn-out" id="btnSignOut">Sair</button>
+      <button class="logout" id="logout">Sair</button>
     </div>
   </aside>
 
-  <!-- Main -->
-  <main class="main">
-    <div class="page-header">
-      <h1>Bem-vindo ao portal, <span id="mainName">—</span></h1>
-      <p>Seu dashboard de inteligência operacional está sendo preparado.</p>
-    </div>
-
-    <div class="soon-card">
-      <div class="soon-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>
+  <main>
+    <div class="topline">
+      <div>
+        <h1>Olá, <span id="firstname">cliente</span> 👋</h1>
+        <div class="sub">Inteligência operacional do seu ecommerce, em um número.</div>
       </div>
-      <h2>Dashboard em construção</h2>
-      <p>A autenticação está funcionando. Agora vamos construir as telas da plataforma uma a uma. Veja o que já está pronto e o que vem a seguir:</p>
-
-      <div class="progress-list">
-        <div class="prog-item"><div class="dot dot-done"></div><span>✓ Schema do banco de dados (Supabase)</span></div>
-        <div class="prog-item"><div class="dot dot-done"></div><span>✓ Autenticação com Google</span></div>
-        <div class="prog-item"><div class="dot dot-done"></div><span>✓ Onboarding Gate (whitelist)</span></div>
-        <div class="prog-item"><div class="dot dot-wip"></div><span>→ Dashboard com os 6 scores</span></div>
-        <div class="prog-item"><div class="dot dot-todo"></div><span>○ Upload de Excel (picking + frete)</span></div>
-        <div class="prog-item"><div class="dot dot-todo"></div><span>○ Interface da KeerpIA</span></div>
-        <div class="prog-item"><div class="dot dot-todo"></div><span>○ Conexão de APIs (OAuth)</span></div>
+      <div class="demo-badge" id="demoBadge" style="display:none">
+        <span class="dot"></span> Dados de demonstração
       </div>
     </div>
+
+    <section class="hero">
+      <div class="ring">
+        <svg width="158" height="158" viewBox="0 0 158 158">
+          <circle cx="79" cy="79" r="69" stroke="rgba(255,255,255,.08)" stroke-width="12" fill="none"/>
+          <circle id="imekArc" cx="79" cy="79" r="69" stroke="var(--lime)" stroke-width="12"
+                  fill="none" stroke-linecap="round" stroke-dasharray="433.5" stroke-dashoffset="433.5"
+                  style="transition:stroke-dashoffset 1.4s var(--ease)"/>
+        </svg>
+        <div class="val"><b id="imekVal">0</b><small>IMEK</small></div>
+      </div>
+      <div class="hero-info">
+        <div class="label">Índice de Maturidade · Keerp</div>
+        <h2 id="imekLevel">—</h2>
+        <p id="imekDesc">Síntese ponderada dos 6 pilares do diagnóstico. Quanto maior o IMEK, mais madura e rentável é a operação digital.</p>
+        <div class="level-track" id="levelTrack"></div>
+      </div>
+    </section>
+
+    <div class="grid" id="grid"></div>
+
+    <section class="panel">
+      <h3>Mapa de maturidade</h3>
+      <div class="ph">Os 6 pilares em uma visão única — onde a operação está forte e onde há oportunidade.</div>
+      <div class="radar-wrap"><svg id="radar" viewBox="0 0 420 380"></svg></div>
+    </section>
+
+    <div class="updated" id="updated"></div>
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPA_URL = 'https://ajgeeuezpfxhsjmankne.supabase.co'
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZ2VldWV6cGZ4aHNqbWFua25lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzc3NzgsImV4cCI6MjA5NTkxMzc3OH0.KDRLr0UWxsvfYUnW6ImC3d5GEPJRY0Qxx8q-ghzQeWA'
-const { createClient } = supabase
-const sb = createClient(SUPA_URL, SUPA_KEY)
+/* ============================================================
+   CONFIG — preencha com os dados do seu projeto Supabase
+   (a anon key é a MESMA que está no index.html, na linha do createClient)
+   ============================================================ */
+const SUPABASE_URL  = "https://ajgeeuezpfxhsjmankne.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZ2VldWV6cGZ4aHNqbWFua25lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzc3NzgsImV4cCI6MjA5NTkxMzc3OH0.KDRLr0UWxsvfYUnW6ImC3d5GEPJRY0Qxx8q-ghzQeWA"; // <-- a string que começa com eyJ... do seu index.html
+const LOGIN_URL     = "index.html";
+const TABELA        = "diagnosticos";
+/* ============================================================ */
 
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (!session) {
-    window.location.href = 'index.html'
-    return
+const PILARES = [
+  { key:"score_experiencia", nome:"Experiência Digital",       fonte:"Google PageSpeed API",           short:"EXP",
+    icon:'<path d="M3 4h18v12H3z"/><path d="M8 20h8M12 16v4"/>' },
+  { key:"score_performance",  nome:"Performance & Conversão",   fonte:"Google Ads · Meta Ads",          short:"PERF",
+    icon:'<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>' },
+  { key:"score_financeiro",   nome:"Financeiro & Margem",       fonte:"Cadastro + margem (Excel/JSON)", short:"FIN",
+    icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.2c0-1 1-1.7 2.5-1.7s2.5.8 2.5 1.8-1 1.6-2.5 1.7-2.5.7-2.5 1.7 1 1.8 2.5 1.8 2.5-.7 2.5-1.7"/>' },
+  { key:"score_operacao",     nome:"Operação & Logística",      fonte:"Movimentações (90d+)",           short:"OPS",
+    icon:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>' },
+  { key:"score_marketing",    nome:"Marketing & Aquisição",     fonte:"Google Ads · integrações",       short:"MKT",
+    icon:'<path d="M3 11l16-7-4 16-4-6-8-3z"/>' },
+  { key:"score_retencao",     nome:"Retenção & Relacionamento", fonte:"LTV · NPS · satisfação",         short:"RET",
+    icon:'<path d="M12 21s-7-4.5-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/>' },
+];
+
+const NIVEIS = [
+  { min:0,  max:20,  nome:"Inicial",            cor:"#ff6b5e", desc:"Operação digital em estágio inicial — base a estruturar." },
+  { min:21, max:40,  nome:"Em Desenvolvimento", cor:"#ff9d4d", desc:"Fundamentos em construção, com lacunas relevantes a corrigir." },
+  { min:41, max:60,  nome:"Estruturado",        cor:"#ffce4d", desc:"Operação organizada, pronta para ganhos de eficiência e escala." },
+  { min:61, max:80,  nome:"Avançado",           cor:"#CCFF00", desc:"Operação madura e rentável, com performance acima da média." },
+  { min:81, max:100, nome:"Referência",         cor:"#CCFF00", desc:"Referência de mercado — operação digital de alto desempenho." },
+];
+
+const DEMO = {
+  empresa:"sua loja", atualizado_em:null, _demo:true,
+  score_experiencia:72, score_performance:64, score_financeiro:58,
+  score_operacao:61, score_marketing:75, score_retencao:70,
+};
+
+const nivelDe = v => NIVEIS.find(n => v>=n.min && v<=n.max) || NIVEIS[0];
+
+let sb = null;
+try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON); } catch(e){ console.warn(e); }
+
+async function boot(){
+  let user = null;
+  if (sb && SUPABASE_ANON !== "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZ2VldWV6cGZ4aHNqbWFua25lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzc3NzgsImV4cCI6MjA5NTkxMzc3OH0.KDRLr0UWxsvfYUnW6ImC3d5GEPJRY0Qxx8q-ghzQeWA"){
+    try{
+      const { data:{ session } } = await sb.auth.getSession();
+      if (!session){ window.location.href = LOGIN_URL; return; }
+      user = session.user;
+    }catch(e){ console.warn("Auth indisponível:", e); }
   }
-  const meta = session.user.user_metadata || {}
-  const nome = meta.full_name || meta.name || session.user.email.split('@')[0]
-  const primeiroNome = nome.split(' ')[0]
 
-  document.getElementById('mainName').textContent = primeiroNome
-  document.getElementById('sideName').textContent = nome
-  document.getElementById('sideEmail').textContent = session.user.email
-  const av = meta.avatar_url || ''
-  if (av) { document.getElementById('sideAvatar').src = av }
+  if (user){
+    const nome = user.user_metadata?.full_name || user.user_metadata?.name || user.email || "Cliente";
+    const first = nome.split(" ")[0];
+    document.getElementById("uname").textContent = nome;
+    document.getElementById("firstname").textContent = first;
+    const pic = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+    if (pic){ const img=document.createElement("img"); img.src=pic; img.alt=""; document.getElementById("avatar").replaceWith(img); }
+    else { document.getElementById("avatar").textContent = first.charAt(0).toUpperCase(); }
+  } else {
+    document.getElementById("uname").textContent = "Visitante";
+  }
 
-  document.getElementById('authGuard').style.display = 'none'
-  document.getElementById('app').style.display = 'grid'
-})
+  let diag = null;
+  if (user && sb){
+    try{
+      const { data, error } = await sb.from(TABELA).select("*")
+        .eq("cliente_id", user.id).order("atualizado_em",{ascending:false}).limit(1);
+      if (!error && data && data.length) diag = data[0];
+    }catch(e){ console.warn("Sem dados de diagnóstico ainda:", e); }
+  }
+  if (!diag){ diag = DEMO; document.getElementById("demoBadge").style.display="inline-flex"; }
 
-document.getElementById('btnSignOut').addEventListener('click', async () => {
-  await sb.auth.signOut()
-  window.location.href = 'index.html'
-})
+  render(diag); reveal();
+}
+
+function render(d){
+  const scores = PILARES.map(p => Number(d[p.key]) || 0);
+  const imek = (d.imek!=null && d.imek!=="") ? Math.round(d.imek)
+             : Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+  const niv = nivelDe(imek);
+
+  const C = 2*Math.PI*69;
+  document.getElementById("imekArc").style.stroke = niv.cor;
+  setTimeout(()=>{ document.getElementById("imekArc").style.strokeDashoffset = C*(1-imek/100); },150);
+  countUp(document.getElementById("imekVal"), imek);
+  document.getElementById("imekLevel").textContent = niv.nome;
+  document.getElementById("imekDesc").textContent = niv.desc;
+
+  const track = document.getElementById("levelTrack");
+  track.innerHTML = NIVEIS.map((n,i)=>`<div class="seg ${i<=NIVEIS.indexOf(niv)?'on':''}"></div>`).join("");
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = PILARES.map(p=>{
+    const v = Number(d[p.key])||0, n = nivelDe(v);
+    return `<div class="card">
+      <div class="ic"><svg viewBox="0 0 24 24">${p.icon}</svg></div>
+      <h3>${p.nome}</h3>
+      <div class="src">${p.fonte}</div>
+      <div class="scoreline"><b data-target="${v}">0</b><em>/ 100</em></div>
+      <div class="lvl" style="color:${n.cor}">${n.nome}</div>
+      <div class="bar"><i data-w="${v}" style="background:${n.cor}"></i></div>
+    </div>`;
+  }).join("");
+
+  setTimeout(()=>{
+    grid.querySelectorAll(".card").forEach((c,i)=>{
+      setTimeout(()=>{
+        c.classList.add("in");
+        countUp(c.querySelector("b[data-target]"), +c.querySelector("b").dataset.target);
+        const bar=c.querySelector("i[data-w]"); bar.style.width = bar.dataset.w+"%";
+      }, i*90);
+    });
+  },200);
+
+  drawRadar(scores);
+
+  const up = document.getElementById("updated");
+  if (d._demo) up.textContent = "Exibindo dados de demonstração — os números reais aparecem assim que o primeiro diagnóstico for gravado no Supabase.";
+  else if (d.atualizado_em) up.textContent = "Última atualização: " + new Date(d.atualizado_em).toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"});
+}
+
+function drawRadar(scores){
+  const svg = document.getElementById("radar");
+  const cx=210, cy=185, R=130, N=6;
+  const ang = i => (-90 + i*(360/N)) * Math.PI/180;
+  const pt = (i,r)=>[cx+r*Math.cos(ang(i)), cy+r*Math.sin(ang(i))];
+  let html="";
+  [.25,.5,.75,1].forEach(f=>{
+    const p = scores.map((_,i)=>pt(i,R*f).join(",")).join(" ");
+    html+=`<polygon points="${p}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`;
+  });
+  PILARES.forEach((p,i)=>{
+    const [x,y]=pt(i,R);
+    html+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,.06)"/>`;
+    const [lx,ly]=pt(i,R+24);
+    const anchor = Math.abs(lx-cx)<6 ? "middle" : (lx<cx?"end":"start");
+    html+=`<text x="${lx}" y="${ly+4}" fill="rgba(247,250,252,.5)" font-size="11" font-weight="600" text-anchor="${anchor}" font-family="Inter">${p.short}</text>`;
+  });
+  const dp = scores.map((s,i)=>pt(i,R*s/100).join(",")).join(" ");
+  html+=`<polygon points="${dp}" fill="rgba(204,255,0,.16)" stroke="#CCFF00" stroke-width="2" stroke-linejoin="round"/>`;
+  scores.forEach((s,i)=>{ const [x,y]=pt(i,R*s/100); html+=`<circle cx="${x}" cy="${y}" r="3.5" fill="#CCFF00"/>`; });
+  svg.innerHTML = html;
+}
+
+function countUp(el, target){
+  const dur=1100, t0=performance.now();
+  (function tick(t){ const k=Math.min((t-t0)/dur,1);
+    el.textContent = Math.round(target*(1-Math.pow(1-k,3)));
+    if(k<1) requestAnimationFrame(tick); })(t0);
+}
+
+function reveal(){
+  document.getElementById("gate").style.opacity="0";
+  setTimeout(()=>document.getElementById("gate").style.display="none",400);
+  document.getElementById("shell").classList.add("ready");
+}
+
+document.getElementById("logout").addEventListener("click", async ()=>{
+  if (sb){ try{ await sb.auth.signOut(); }catch(e){} }
+  window.location.href = LOGIN_URL;
+});
+
+boot();
 </script>
 </body>
 </html>

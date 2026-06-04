@@ -1,217 +1,361 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Keerp · Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{
-  --lime:#CCFF00;--bg:#121212;--text:#F7FAFC;
-  --text-dim:rgba(247,250,252,.62);--text-faint:rgba(247,250,252,.38);
-  --glass:rgba(255,255,255,.05);--glass-strong:rgba(255,255,255,.08);
-  --glass-hover:rgba(255,255,255,.11);
-  --border:rgba(255,255,255,.13);--border-soft:rgba(255,255,255,.07);
-  --shadow:0 40px 80px -20px rgba(0,0,0,.85);--glow:rgba(204,255,0,.15);
-  --ease:cubic-bezier(0,.22,1,.36);--r:28px;--sidebar:272px;
+/* ═══ TOKENS ═══ */
+:root {
+  --lime:#CCFF00; --lime-dim:rgba(204,255,0,.12); --lime-glow:rgba(204,255,0,.2);
+  --ease:cubic-bezier(0,.22,1,.36); --r:24px; --sidebar:268px;
 }
+
+/* ── DARK ── */
+[data-theme="dark"] {
+  --bg-a:#050f07; --bg-b:#0a1a0d;
+  --blob-1:rgba(204,255,0,.18); --blob-2:rgba(0,80,20,.35); --blob-3:rgba(10,40,15,.6);
+  --glass:rgba(255,255,255,.04); --glass-2:rgba(255,255,255,.07); --glass-3:rgba(255,255,255,.10);
+  --border:rgba(255,255,255,.10); --border-hi:rgba(255,255,255,.16);
+  --inset:rgba(255,255,255,.08); --inset-b:rgba(0,0,0,.2);
+  --text:#F0F7EC; --text-dim:rgba(240,247,236,.6); --text-faint:rgba(240,247,236,.35);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.4);
+  --shadow-md:0 8px 32px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.3);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.6), 0 8px 24px rgba(0,0,0,.4);
+  --sidebar-bg:rgba(5,15,7,.75); --sidebar-border:rgba(204,255,0,.08);
+}
+
+/* ── LIGHT ── */
+[data-theme="light"] {
+  --bg-a:#e8f5e0; --bg-b:#f4faf0;
+  --blob-1:rgba(180,255,60,.3); --blob-2:rgba(100,200,50,.15); --blob-3:rgba(220,255,180,.4);
+  --glass:rgba(255,255,255,.55); --glass-2:rgba(255,255,255,.7); --glass-3:rgba(255,255,255,.85);
+  --border:rgba(0,0,0,.07); --border-hi:rgba(255,255,255,.9);
+  --inset:rgba(255,255,255,.9); --inset-b:rgba(0,0,0,.04);
+  --text:#0d2010; --text-dim:rgba(13,32,16,.6); --text-faint:rgba(13,32,16,.38);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.06);
+  --shadow-md:0 4px 20px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.05);
+  --shadow-lg:0 12px 48px rgba(0,0,0,.10), 0 4px 16px rgba(0,0,0,.06);
+  --sidebar-bg:rgba(255,255,255,.72); --sidebar-border:rgba(0,0,0,.06);
+}
+
+/* ═══ BASE ═══ */
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{background:radial-gradient(900px 500px at 80% -10%,var(--glow),transparent 60%),var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
-h1,h2,h3,.brand b{font-family:'Plus Jakarta Sans',sans-serif}
+html{height:100%;transition:none}
+body{
+  min-height:100vh; font-family:'DM Sans','Inter',sans-serif;
+  -webkit-font-smoothing:antialiased; color:var(--text);
+  background: radial-gradient(ellipse 90% 70% at 10% -10%, var(--blob-1), transparent 55%),
+              radial-gradient(ellipse 70% 90% at 90% 110%, var(--blob-2), transparent 55%),
+              radial-gradient(ellipse 120% 120% at 50% 50%, var(--bg-b), var(--bg-a));
+  transition: background .5s var(--ease), color .3s;
+}
+h1,h2,h3,.val b,.scoreline b,.brand b { font-family:'Plus Jakarta Sans',sans-serif }
 
 /* GATE */
-#gate{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--bg);z-index:99;transition:opacity .4s}
-.spinner{width:34px;height:34px;border:3px solid rgba(204,255,0,.2);border-top-color:var(--lime);border-radius:50%;animation:spin .8s linear infinite}
+#gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:18px;z-index:99;
+  background:radial-gradient(ellipse 120% 120% at 50% 50%,var(--bg-b),var(--bg-a));
+  transition:opacity .4s}
+.sp{width:36px;height:36px;border:3px solid var(--lime-dim);border-top-color:var(--lime);
+  border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+#gate p{color:var(--text-dim);font-size:13.5px;letter-spacing:.02em}
 
 /* SHELL */
-.shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh;opacity:0;transition:opacity .5s}
+.shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh;
+  opacity:0;transition:opacity .5s}
 .shell.ready{opacity:1}
 
-/* ─── SIDEBAR ─── */
+/* ═══ SIDEBAR ═══ */
 aside{
-  border-right:1px solid var(--border-soft);
-  background:rgba(18,18,18,.95);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
+  background:var(--sidebar-bg);
+  backdrop-filter:blur(48px) saturate(180%);
+  -webkit-backdrop-filter:blur(48px) saturate(180%);
+  border-right:1px solid var(--sidebar-border);
+  box-shadow:4px 0 32px rgba(0,0,0,.15);
   display:flex;flex-direction:column;
   position:sticky;top:0;height:100vh;overflow-y:auto;
-  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;
+  scrollbar-width:none;
 }
-.brand{display:flex;align-items:center;gap:11px;padding:24px 20px 18px;border-bottom:1px solid var(--border-soft)}
-.brand .mark{width:32px;height:32px;border-radius:10px;background:var(--lime);display:grid;place-items:center;color:#0d0d0d;font-weight:800;font-size:18px;box-shadow:0 0 24px var(--glow);font-family:'Plus Jakarta Sans';flex:none}
-.brand b{font-size:19px;font-weight:800;letter-spacing:-.02em}
+aside::-webkit-scrollbar{display:none}
 
-/* Nav container */
-.nav-scroll{flex:1;padding:12px 12px 0;overflow-y:auto}
-
-/* Category */
-.nav-cat{margin-bottom:2px}
-.nav-cat-label{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);padding:14px 10px 6px;display:block}
-
-/* Group (e.g. DIAGNÓSTICO → SITE) */
-.nav-group{margin-bottom:1px}
-.nav-group-hd{
-  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;
-  cursor:pointer;transition:.18s var(--ease);color:var(--text-dim);font-size:14px;font-weight:600;
-  user-select:none;
+/* Brand */
+.brand{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 18px 18px;
+  border-bottom:1px solid var(--border);
 }
-.nav-group-hd:hover{background:var(--glass);color:var(--text)}
-.nav-group-hd.open{color:var(--text)}
-.nav-group-hd .ico{font-size:16px;flex:none;width:22px;text-align:center}
-.nav-group-hd .lbl{flex:1}
-.nav-group-hd .arr{font-size:10px;color:var(--text-faint);transition:.2s var(--ease)}
-.nav-group-hd.open .arr{transform:rotate(180deg)}
+.brand-left{display:flex;align-items:center;gap:11px}
+.brand .mark{
+  width:34px;height:34px;border-radius:10px;background:var(--lime);
+  display:grid;place-items:center;color:#0a1a0a;font-weight:900;font-size:17px;
+  box-shadow:0 0 20px var(--lime-glow), 0 4px 12px rgba(204,255,0,.3);
+  font-family:'Plus Jakarta Sans';flex:none;letter-spacing:-.02em;
+}
+.brand b{font-size:18px;font-weight:800;letter-spacing:-.02em}
 
-/* Sub-items container */
-.nav-group-body{max-height:0;overflow:hidden;transition:max-height .3s var(--ease)}
-.nav-group-body.open{max-height:600px}
+/* Theme toggle */
+.theme-btn{
+  width:34px;height:20px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--glass-2);cursor:pointer;position:relative;
+  transition:.3s var(--ease);flex:none;
+}
+.theme-btn::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:12px;height:12px;border-radius:50%;
+  background:var(--lime);transition:.3s var(--ease);
+  box-shadow:0 0 8px var(--lime-glow);
+}
+[data-theme="light"] .theme-btn::after{left:calc(100% - 14px)}
 
-/* Individual link */
-.nav-group-body a{
-  display:flex;align-items:center;gap:8px;padding:7px 10px 7px 34px;
-  border-radius:10px;font-size:13.5px;color:var(--text-dim);text-decoration:none;
+/* Nav */
+.nav-wrap{flex:1;padding:10px 10px 0;overflow-y:auto;scrollbar-width:none}
+.nav-wrap::-webkit-scrollbar{display:none}
+.nav-section{margin-bottom:4px}
+.nav-section-lbl{
+  font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text-faint);padding:14px 10px 5px;display:block;
+}
+
+/* Nav group */
+.ng{border-radius:14px;overflow:hidden;margin-bottom:2px}
+.ng-hd{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  cursor:pointer;transition:.2s var(--ease);color:var(--text-dim);
+  font-size:13.5px;font-weight:600;border-radius:14px;user-select:none;
+}
+.ng-hd:hover,.ng-hd.open{color:var(--text);background:var(--glass-2)}
+.ng-hd .ico{
+  width:28px;height:28px;border-radius:8px;background:var(--glass-2);
+  display:grid;place-items:center;flex:none;transition:.2s;
+}
+.ng-hd:hover .ico,.ng-hd.open .ico{background:var(--lime-dim)}
+.ng-hd .ico svg{width:14px;height:14px;stroke:var(--text-dim);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ng-hd:hover .ico svg,.ng-hd.open .ico svg{stroke:var(--lime)}
+.ng-hd .lbl{flex:1;font-size:13px}
+.ng-hd .arr{
+  width:16px;height:16px;border-radius:5px;background:var(--glass);
+  display:grid;place-items:center;flex:none;
+  transition:.25s var(--ease);
+}
+.ng-hd .arr svg{width:9px;height:9px;stroke:var(--text-faint);fill:none;stroke-width:2.5}
+.ng-hd.open .arr{transform:rotate(180deg);background:var(--lime-dim)}
+.ng-hd.open .arr svg{stroke:var(--lime)}
+
+/* Nav sub-items */
+.ng-body{max-height:0;overflow:hidden;transition:max-height .35s var(--ease)}
+.ng-body.open{max-height:600px}
+.ng-body a{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 12px 7px 38px;border-radius:10px;
+  font-size:13px;color:var(--text-dim);text-decoration:none;
   transition:.15s var(--ease);margin-bottom:1px;font-weight:500;
 }
-.nav-group-body a:hover{background:var(--glass);color:var(--text)}
-.nav-group-body a.active{background:var(--lime);color:#0d0d0d;font-weight:700}
-.nav-group-body a .dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;opacity:.6}
-.nav-group-body a.active .dot{opacity:1}
+.ng-body a:hover{background:var(--glass-2);color:var(--text)}
+.ng-body a.active{
+  background:var(--lime);color:#0a1a0a;font-weight:700;
+  box-shadow:0 4px 16px rgba(204,255,0,.25);
+}
+.ng-body a .d{
+  width:4px;height:4px;border-radius:50%;background:currentColor;
+  flex:none;opacity:.5;
+}
+.ng-body a.active .d{opacity:1}
+.soon{
+  font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-faint);border:1px solid var(--border);
+  padding:1px 6px;border-radius:4px;margin-left:auto;
+}
 
-/* Soon badge */
-.soon{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);
-  border:1px solid var(--border-soft);padding:1px 5px;border-radius:4px;margin-left:auto}
-
-/* Divider */
-.nav-div{height:1px;background:var(--border-soft);margin:8px 10px}
+.nav-div{height:1px;background:var(--border);margin:8px 10px}
 
 /* Sidebar footer */
-.side-foot{padding:14px 12px 20px;border-top:1px solid var(--border-soft)}
-.user-row{display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;margin-bottom:8px;
-  background:var(--glass);border:1px solid var(--border-soft)}
-.user-row img,.user-row .avatar-ph{width:34px;height:34px;border-radius:10px;object-fit:cover;
-  background:var(--glass-strong);display:grid;place-items:center;font-weight:700;color:var(--lime);font-size:13px;font-family:'Plus Jakarta Sans';flex:none}
-.user-row .meta{overflow:hidden;flex:1}
-.user-row .meta b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Plus Jakarta Sans'}
-.user-row .meta span{font-size:11px;color:var(--text-faint)}
-.logout{width:100%;background:none;border:1px solid var(--border-soft);color:var(--text-dim);padding:9px;border-radius:12px;font:inherit;font-size:13px;cursor:pointer;transition:.18s}
-.logout:hover{border-color:#ff6b5e;color:#ff6b5e}
+.sf{padding:12px 10px 18px;border-top:1px solid var(--border)}
+.user-card{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:16px;margin-bottom:8px;
+  background:var(--glass-2);border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+}
+.user-card img,.user-card .av{
+  width:34px;height:34px;border-radius:10px;object-fit:cover;
+  background:var(--glass-3);display:grid;place-items:center;
+  font-weight:800;color:var(--lime);font-size:13px;font-family:'Plus Jakarta Sans';flex:none;
+}
+.user-card .info{overflow:hidden;flex:1}
+.user-card .info b{display:block;font-size:12.5px;font-weight:700;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;font-family:'Plus Jakarta Sans'}
+.user-card .info span{font-size:11px;color:var(--text-faint)}
+.btn-logout{
+  width:100%;background:var(--glass);border:1px solid var(--border);
+  color:var(--text-dim);padding:9px;border-radius:12px;
+  font:inherit;font-size:12.5px;cursor:pointer;transition:.2s;display:flex;
+  align-items:center;justify-content:center;gap:7px;
+}
+.btn-logout:hover{border-color:rgba(255,107,94,.5);color:#ff7a6e;background:rgba(255,107,94,.07)}
+.btn-logout svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
 
-/* ─── MAIN ─── */
-main{padding:40px 48px 64px;max-width:1180px}
+/* ═══ MAIN ═══ */
+main{padding:40px 44px 64px;max-width:1140px}
+
 .topline{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:32px}
-.topline h1{font-size:30px;font-weight:800;letter-spacing:-.03em}
+.topline h1{font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
 .topline h1 span{color:var(--lime)}
-.topline .sub{font-size:14.5px;color:var(--text-dim);margin-top:5px}
-.demo-badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#ffce4d;background:rgba(255,206,77,.08);border:1px solid rgba(255,206,77,.25);padding:7px 13px;border-radius:50px}
+.topline .sub{font-size:14px;color:var(--text-dim);margin-top:5px;line-height:1.5}
+.demo-pill{
+  display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;
+  color:#f5c84a;background:rgba(245,200,74,.08);
+  border:1px solid rgba(245,200,74,.2);padding:6px 14px;border-radius:50px;
+}
 
-/* IMEK HERO */
-.hero{display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center;
-  background:linear-gradient(135deg,rgba(204,255,0,.06),rgba(204,255,0,.02));
-  border:1px solid var(--border);border-radius:var(--r);padding:32px 36px;margin-bottom:24px;
-  position:relative;overflow:hidden;box-shadow:var(--shadow)}
-.hero::after{content:'';position:absolute;right:-80px;top:-90px;width:280px;height:280px;
-  background:radial-gradient(circle,var(--glow),transparent 70%);pointer-events:none}
-.ring{position:relative;width:148px;height:148px;flex:none}
+/* ── IMEK HERO ── */
+.hero{
+  display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:center;
+  background:var(--glass-2);
+  backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+  border:1px solid var(--border-hi);border-radius:28px;padding:30px 36px;margin-bottom:22px;
+  box-shadow:var(--shadow-md);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--lime-dim),transparent 60%);
+  pointer-events:none;
+}
+.hero::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--inset),transparent);
+}
+.ring{position:relative;width:144px;height:144px;flex:none}
 .ring svg{transform:rotate(-90deg)}
 .ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ring .val b{font-size:42px;font-weight:800;letter-spacing:-.04em;font-family:'Plus Jakarta Sans'}
-.ring .val small{font-size:11px;color:var(--text-dim);letter-spacing:.16em;text-transform:uppercase;margin-top:2px}
-.hero-info .badge{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--lime);font-weight:700;margin-bottom:8px}
-.hero-info h2{font-size:25px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
-.hero-info p{color:var(--text-dim);font-size:14px;max-width:420px;line-height:1.6}
-.level-track{display:flex;gap:5px;margin-top:16px;max-width:320px}
-.level-track .seg{flex:1;height:5px;border-radius:3px;background:var(--glass-strong)}
-.level-track .seg.on{background:var(--lime);box-shadow:0 0 10px var(--glow)}
+.ring .val b{font-size:40px;font-weight:900;letter-spacing:-.04em;line-height:1}
+.ring .val small{font-size:10.5px;color:var(--text-dim);letter-spacing:.16em;text-transform:uppercase;margin-top:2px}
+.hi-badge{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--lime);font-weight:700;margin-bottom:7px}
+.hi h2{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:7px}
+.hi p{color:var(--text-dim);font-size:13.5px;max-width:400px;line-height:1.6}
+.lvl-track{display:flex;gap:5px;margin-top:16px;max-width:300px}
+.lvl-track .s{flex:1;height:5px;border-radius:3px;background:var(--glass-3)}
+.lvl-track .s.on{background:var(--lime);box-shadow:0 0 8px var(--lime-glow)}
 
-/* SCORE GRID */
+/* ── SCORE GRID ── */
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.card{background:var(--glass);border:1px solid var(--border-soft);border-radius:22px;padding:20px;
-  cursor:pointer;transition:.22s var(--ease);opacity:0;transform:translateY(12px)}
-.card.in{opacity:1;transform:none}
-.card:hover{border-color:var(--border);background:var(--glass-hover);transform:translateY(-3px)}
-.card .ico{width:36px;height:36px;border-radius:11px;background:rgba(204,255,0,.1);display:grid;place-items:center;margin-bottom:14px}
-.card .ico svg{width:19px;height:19px;stroke:var(--lime);fill:none;stroke-width:1.8}
-.card h3{font-size:14.5px;font-weight:700;margin-bottom:2px}
-.card .src{font-size:11px;color:var(--text-faint);margin-bottom:16px}
-.card .scoreline{display:flex;align-items:baseline;gap:6px;margin-bottom:10px}
-.card .scoreline b{font-size:32px;font-weight:800;letter-spacing:-.03em;font-family:'Plus Jakarta Sans'}
-.card .scoreline em{font-size:12px;font-style:normal;color:var(--text-dim)}
-.card .lvl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-.bar{height:5px;border-radius:3px;background:var(--glass-strong);overflow:hidden;margin-top:12px}
-.bar i{display:block;height:100%;width:0;border-radius:3px;transition:width 1.1s var(--ease)}
+.card{
+  background:var(--glass-2);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--border);border-radius:24px;padding:22px;
+  cursor:pointer;opacity:0;transform:translateY(14px);
+  transition:opacity .5s var(--ease),transform .5s var(--ease),box-shadow .25s var(--ease),border-color .25s;
+  box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
+}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--inset),transparent)}
+.card.in{opacity:1;transform:translateY(0)}
+.card:hover{border-color:var(--border-hi);box-shadow:var(--shadow-md);transform:translateY(-5px) !important}
+.card .ico{
+  width:38px;height:38px;border-radius:12px;
+  background:var(--lime-dim);display:grid;place-items:center;margin-bottom:15px;
+  box-shadow:0 2px 8px var(--lime-glow);
+}
+.card .ico svg{width:18px;height:18px;stroke:var(--lime);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:13.5px;font-weight:700;margin-bottom:2px;letter-spacing:-.01em}
+.card .src{font-size:11px;color:var(--text-faint);margin-bottom:15px}
+.scoreline{display:flex;align-items:baseline;gap:6px;margin-bottom:9px}
+.scoreline b{font-size:30px;font-weight:900;letter-spacing:-.04em}
+.scoreline em{font-size:12px;font-style:normal;color:var(--text-dim)}
+.card .lv{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+.bar{height:5px;border-radius:3px;background:var(--glass-3);overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;width:0;border-radius:3px;transition:width 1.2s var(--ease)}
 
-/* RADAR */
-.panel{background:var(--glass);border:1px solid var(--border-soft);border-radius:var(--r);padding:24px 28px;margin-top:20px}
-.panel h3{font-size:15px;font-weight:700;margin-bottom:4px}
+/* ── RADAR PANEL ── */
+.panel{
+  background:var(--glass-2);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--border);border-radius:24px;padding:24px 28px;margin-top:18px;
+  box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
+}
+.panel::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--inset),transparent)}
+.panel h3{font-size:14.5px;font-weight:700;margin-bottom:3px}
 .panel p{font-size:13px;color:var(--text-dim);margin-bottom:16px}
 .radar-wrap{display:flex;justify-content:center}
 
-.updated{margin-top:28px;font-size:12px;color:var(--text-faint);text-align:center}
+.updated{margin-top:26px;font-size:12px;color:var(--text-faint);text-align:center}
 </style>
 </head>
 <body>
-<div id="gate"><div class="spinner"></div></div>
+
+<div id="gate"><div class="sp"></div><p>Verificando sessão…</p></div>
 
 <div class="shell" id="shell">
 
-  <!-- ─── SIDEBAR ─── -->
+  <!-- ═══ SIDEBAR ═══ -->
   <aside>
-    <div class="brand"><div class="mark">K</div><b>Keerp</b></div>
+    <div class="brand">
+      <div class="brand-left">
+        <div class="mark">K</div>
+        <b>Keerp</b>
+      </div>
+      <button class="theme-btn" id="themeBtn" title="Alternar tema"></button>
+    </div>
 
-    <div class="nav-scroll">
+    <div class="nav-wrap">
 
       <!-- DIAGNÓSTICO -->
-      <div class="nav-cat">
-        <span class="nav-cat-label">Diagnóstico</span>
+      <div class="nav-section">
+        <span class="nav-section-lbl">Diagnóstico</span>
 
-        <div class="nav-group">
-          <div class="nav-group-hd open" onclick="toggleGroup(this)">
-            <span class="ico">🌐</span><span class="lbl">Site</span><span class="arr">▼</span>
+        <div class="ng">
+          <div class="ng-hd open" onclick="ng(this)">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+            <span class="lbl">Site</span>
+            <div class="arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
           </div>
-          <div class="nav-group-body open">
-            <a href="diagnostico-site.html"><span class="dot"></span>Performance</a>
-            <a href="#"><span class="dot"></span>Mobile<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>SEO & Acessibilidade<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Histórico<span class="soon">breve</span></a>
+          <div class="ng-body open">
+            <a href="diagnostico-site.html"><span class="d"></span>Performance</a>
+            <a href="#"><span class="d"></span>Mobile<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>SEO & Acessibilidade<span class="soon">breve</span></a>
           </div>
         </div>
 
-        <div class="nav-group">
-          <div class="nav-group-hd" onclick="toggleGroup(this)">
-            <span class="ico">📱</span><span class="lbl">Redes Sociais</span><span class="arr">▼</span>
+        <div class="ng">
+          <div class="ng-hd" onclick="ng(this)">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+            <span class="lbl">Redes Sociais</span>
+            <div class="arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
           </div>
-          <div class="nav-group-body">
-            <a href="#"><span class="dot"></span>Instagram<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>TikTok<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Meta / Facebook<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Consolidado<span class="soon">breve</span></a>
-          </div>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-group-hd" onclick="toggleGroup(this)">
-            <span class="ico">📦</span><span class="lbl">Operação</span><span class="arr">▼</span>
-          </div>
-          <div class="nav-group-body">
-            <a href="#"><span class="dot"></span>Vendas<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Picking & Packing<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Transporte<span class="soon">breve</span></a>
+          <div class="ng-body">
+            <a href="#"><span class="d"></span>Instagram<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>TikTok<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>Meta / Facebook<span class="soon">breve</span></a>
           </div>
         </div>
 
-        <div class="nav-group">
-          <div class="nav-group-hd" onclick="toggleGroup(this)">
-            <span class="ico">💝</span><span class="lbl">Relacionamento</span><span class="arr">▼</span>
+        <div class="ng">
+          <div class="ng-hd" onclick="ng(this)">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+            <span class="lbl">Operação</span>
+            <div class="arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
           </div>
-          <div class="nav-group-body">
-            <a href="#"><span class="dot"></span>NPS<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Retenção<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>SAC & Feedback<span class="soon">breve</span></a>
+          <div class="ng-body">
+            <a href="#"><span class="d"></span>Vendas<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>Picking & Packing<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>Transporte<span class="soon">breve</span></a>
+          </div>
+        </div>
+
+        <div class="ng">
+          <div class="ng-hd" onclick="ng(this)">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+            <span class="lbl">Relacionamento</span>
+            <div class="arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="ng-body">
+            <a href="#"><span class="d"></span>NPS<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>Retenção<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>SAC & Feedback<span class="soon">breve</span></a>
           </div>
         </div>
       </div>
@@ -219,15 +363,17 @@ main{padding:40px 48px 64px;max-width:1180px}
       <div class="nav-div"></div>
 
       <!-- CADASTRO -->
-      <div class="nav-cat">
-        <span class="nav-cat-label">Cadastro</span>
-        <div class="nav-group">
-          <div class="nav-group-hd" onclick="toggleGroup(this)">
-            <span class="ico">📋</span><span class="lbl">Gestão</span><span class="arr">▼</span>
+      <div class="nav-section">
+        <span class="nav-section-lbl">Cadastro</span>
+        <div class="ng">
+          <div class="ng-hd" onclick="ng(this)">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <span class="lbl">Gestão</span>
+            <div class="arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
           </div>
-          <div class="nav-group-body">
-            <a href="#"><span class="dot"></span>Clientes<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Usuários<span class="soon">breve</span></a>
+          <div class="ng-body">
+            <a href="#"><span class="d"></span>Clientes<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>Usuários<span class="soon">breve</span></a>
           </div>
         </div>
       </div>
@@ -235,15 +381,17 @@ main{padding:40px 48px 64px;max-width:1180px}
       <div class="nav-div"></div>
 
       <!-- KEERP IA -->
-      <div class="nav-cat">
-        <span class="nav-cat-label">Inteligência</span>
-        <div class="nav-group">
-          <div class="nav-group-hd" onclick="toggleGroup(this)">
-            <span class="ico">🤖</span><span class="lbl">KeerpIA</span><span class="arr">▼</span>
+      <div class="nav-section">
+        <span class="nav-section-lbl">Inteligência</span>
+        <div class="ng">
+          <div class="ng-hd" onclick="ng(this)">
+            <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <span class="lbl">KeerpIA</span>
+            <div class="arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
           </div>
-          <div class="nav-group-body">
-            <a href="#"><span class="dot"></span>Chat<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Configuração<span class="soon">breve</span></a>
+          <div class="ng-body">
+            <a href="#"><span class="d"></span>Chat<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>Configuração<span class="soon">breve</span></a>
           </div>
         </div>
       </div>
@@ -251,154 +399,184 @@ main{padding:40px 48px 64px;max-width:1180px}
       <div class="nav-div"></div>
 
       <!-- SISTEMA -->
-      <div class="nav-cat">
-        <span class="nav-cat-label">Sistema</span>
-        <div class="nav-group">
-          <div class="nav-group-hd" onclick="toggleGroup(this)">
-            <span class="ico">⚙️</span><span class="lbl">Configurações</span><span class="arr">▼</span>
+      <div class="nav-section">
+        <span class="nav-section-lbl">Sistema</span>
+        <div class="ng">
+          <div class="ng-hd" onclick="ng(this)">
+            <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div>
+            <span class="lbl">Configurações</span>
+            <div class="arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
           </div>
-          <div class="nav-group-body">
-            <a href="#"><span class="dot"></span>Notificações<span class="soon">breve</span></a>
-            <a href="#"><span class="dot"></span>Configuração<span class="soon">breve</span></a>
+          <div class="ng-body">
+            <a href="#"><span class="d"></span>Notificações<span class="soon">breve</span></a>
+            <a href="#"><span class="d"></span>Configuração<span class="soon">breve</span></a>
           </div>
         </div>
       </div>
 
-    </div><!-- /nav-scroll -->
+    </div>
 
-    <div class="side-foot">
-      <div class="user-row">
-        <div class="avatar-ph" id="avatar">—</div>
-        <div class="meta"><b id="uname">Carregando…</b><span id="urole">Cliente Keerp</span></div>
+    <div class="sf">
+      <div class="user-card">
+        <div class="av" id="av">—</div>
+        <div class="info"><b id="uname">…</b><span id="urole">Cliente Keerp</span></div>
       </div>
-      <button class="logout" id="logout">Sair da conta</button>
+      <button class="btn-logout" id="logout">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair da conta
+      </button>
     </div>
   </aside>
 
-  <!-- ─── MAIN ─── -->
+  <!-- ═══ MAIN ═══ -->
   <main>
     <div class="topline">
       <div>
-        <h1>Olá, <span id="firstname">cliente</span> 👋</h1>
+        <h1>Olá, <span id="fname">cliente</span> 👋</h1>
         <div class="sub">Inteligência operacional do seu ecommerce, em um número.</div>
       </div>
-      <div class="demo-badge" id="demoBadge" style="display:none">
-        <span style="width:7px;height:7px;border-radius:50%;background:#ffce4d;display:inline-block"></span>
-        Dados de demonstração
+      <div class="demo-pill" id="demoPill" style="display:none">
+        <span style="width:6px;height:6px;border-radius:50%;background:#f5c84a;display:inline-block"></span>
+        Demonstração
       </div>
     </div>
 
+    <!-- IMEK -->
     <section class="hero">
       <div class="ring">
-        <svg width="148" height="148" viewBox="0 0 148 148">
-          <circle cx="74" cy="74" r="64" stroke="rgba(255,255,255,.08)" stroke-width="11" fill="none"/>
-          <circle id="imekArc" cx="74" cy="74" r="64" stroke="var(--lime)" stroke-width="11"
-            fill="none" stroke-linecap="round" stroke-dasharray="402" stroke-dashoffset="402"
-            style="transition:stroke-dashoffset 1.4s var(--ease)"/>
+        <svg width="144" height="144" viewBox="0 0 144 144">
+          <circle cx="72" cy="72" r="62" stroke="var(--glass-3)" stroke-width="10" fill="none"/>
+          <circle id="arc" cx="72" cy="72" r="62" stroke="var(--lime)" stroke-width="10"
+            fill="none" stroke-linecap="round"
+            stroke-dasharray="389.6" stroke-dashoffset="389.6"
+            style="transition:stroke-dashoffset 1.4s var(--ease),stroke .3s"/>
         </svg>
-        <div class="val"><b id="imekVal">0</b><small>IMEK</small></div>
+        <div class="val"><b id="imekN">0</b><small>IMEK</small></div>
       </div>
-      <div class="hero-info">
-        <div class="badge">Índice de Maturidade · Keerp</div>
-        <h2 id="imekLevel">—</h2>
-        <p id="imekDesc">Síntese ponderada dos 6 pilares do diagnóstico.</p>
-        <div class="level-track" id="levelTrack"></div>
+      <div class="hi">
+        <div class="hi-badge">Índice de Maturidade · Keerp</div>
+        <h2 id="imekL">—</h2>
+        <p id="imekD">Síntese ponderada dos 6 pilares do diagnóstico.</p>
+        <div class="lvl-track" id="lvlTrack"></div>
       </div>
     </section>
 
-    <div class="grid" id="grid"></div>
+    <div class="grid" id="cardGrid"></div>
 
     <section class="panel">
       <h3>Mapa de maturidade</h3>
-      <p>Os 6 pilares em uma visão única — onde está forte e onde há oportunidade.</p>
+      <p>Seis pilares em uma visão única — pontos fortes e oportunidades.</p>
       <div class="radar-wrap"><svg id="radar" viewBox="0 0 420 380" style="width:100%;max-width:460px;height:auto"></svg></div>
     </section>
 
-    <div class="updated" id="updated"></div>
+    <div class="updated" id="upd"></div>
   </main>
 </div>
 
 <script>
 const SUPA_URL='https://ajgeeuezpfxhsjmankne.supabase.co'
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZ2VldWV6cGZ4aHNqbWFua25lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzc3NzgsImV4cCI6MjA5NTkxMzc3OH0.KDRLr0UWxsvfYUnW6ImC3d5GEPJRY0Qxx8q-ghzQeWA'
-const LOGIN_URL='index.html'
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY)
 
-const PILARES=[
-  {key:'score_experiencia',nome:'Experiência Digital',fonte:'PageSpeed + Redes Sociais',short:'EXP',icon:'<path d="M3 4h18v12H3z"/><path d="M8 20h8M12 16v4"/>'},
-  {key:'score_performance',nome:'Performance & Conversão',fonte:'Google Ads · Meta Ads',short:'PERF',icon:'<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>'},
-  {key:'score_financeiro',nome:'Financeiro & Margem',fonte:'Cadastro + margem',short:'FIN',icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10"/>'},
-  {key:'score_operacao',nome:'Operação & Logística',fonte:'Movimentações (90d+)',short:'OPS',icon:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>'},
-  {key:'score_marketing',nome:'Marketing & Aquisição',fonte:'Google Ads · integrações',short:'MKT',icon:'<path d="M3 11l16-7-4 16-4-6-8-3z"/>'},
-  {key:'score_retencao',nome:'Retenção & Relacionamento',fonte:'LTV · NPS · satisfação',short:'RET',icon:'<path d="M12 21s-7-4.5-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/>'},
-]
-const NIVEIS=[
-  {min:0,max:20,nome:'Inicial',cor:'#ff6b5e',desc:'Operação digital em estágio inicial.'},
-  {min:21,max:40,nome:'Em Desenvolvimento',cor:'#ff9d4d',desc:'Fundamentos em construção com lacunas a corrigir.'},
-  {min:41,max:60,nome:'Estruturado',cor:'#ffce4d',desc:'Operação organizada, pronta para ganhos de escala.'},
-  {min:61,max:80,nome:'Avançado',cor:'#CCFF00',desc:'Operação madura e rentável, acima da média.'},
-  {min:81,max:100,nome:'Referência',cor:'#CCFF00',desc:'Referência de mercado — operação de alto desempenho.'},
-]
-const DEMO={_demo:true,empresa:'sua loja',score_experiencia:72,score_performance:64,score_financeiro:58,score_operacao:61,score_marketing:75,score_retencao:70}
-const nivelDe=v=>NIVEIS.find(n=>v>=n.min&&v<=n.max)||NIVEIS[0]
+/* Theme */
+const t=localStorage.getItem('keerp-theme')||'dark'
+document.documentElement.setAttribute('data-theme',t)
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const c=document.documentElement.getAttribute('data-theme')
+  const n=c==='dark'?'light':'dark'
+  document.documentElement.setAttribute('data-theme',n)
+  localStorage.setItem('keerp-theme',n)
+})
 
 /* Nav toggle */
-function toggleGroup(el){
-  el.classList.toggle('open')
-  const body=el.nextElementSibling
-  body.classList.toggle('open')
-}
+function ng(el){el.classList.toggle('open');el.nextElementSibling.classList.toggle('open')}
+
+/* Data */
+const PILARES=[
+  {key:'score_experiencia',n:'Experiência Digital',s:'PageSpeed + Social',sh:'EXP',
+   ico:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'},
+  {key:'score_performance',n:'Performance & Conversão',s:'Google Ads · Meta Ads',sh:'PERF',
+   ico:'<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>'},
+  {key:'score_financeiro',n:'Financeiro & Margem',s:'Cadastro + margem',sh:'FIN',
+   ico:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'},
+  {key:'score_operacao',n:'Operação & Logística',s:'Movimentações 90d+',sh:'OPS',
+   ico:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>'},
+  {key:'score_marketing',n:'Marketing & Aquisição',s:'Google Ads · integrações',sh:'MKT',
+   ico:'<path d="M3 11l19-9-9 19-2-8-8-2z"/>'},
+  {key:'score_retencao',n:'Retenção & Relacionamento',s:'LTV · NPS · satisfação',sh:'RET',
+   ico:'<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'},
+]
+const NV=[
+  {lo:0,hi:20,n:'Inicial',c:'#ff6b5e',d:'Operação digital em estágio inicial.'},
+  {lo:21,hi:40,n:'Em Desenvolvimento',c:'#ff9d4d',d:'Fundamentos em construção com lacunas.'},
+  {lo:41,hi:60,n:'Estruturado',c:'#ffce4d',d:'Operação organizada, pronta para escala.'},
+  {lo:61,hi:80,n:'Avançado',c:'#CCFF00',d:'Operação madura e rentável, acima da média.'},
+  {lo:81,hi:100,n:'Referência',c:'#CCFF00',d:'Referência de mercado — alto desempenho.'},
+]
+const DEMO={_demo:1,score_experiencia:72,score_performance:64,score_financeiro:58,score_operacao:61,score_marketing:75,score_retencao:70}
+const nv=v=>NV.find(n=>v>=n.lo&&v<=n.hi)||NV[0]
 
 async function boot(){
-  let user=null
-  try{const{data:{session}}=await sb.auth.getSession();if(!session){window.location.href=LOGIN_URL;return}user=session.user}catch(e){}
-  if(user){
-    const nome=user.user_metadata?.full_name||user.user_metadata?.name||user.email||'Cliente'
-    document.getElementById('uname').textContent=nome
-    document.getElementById('firstname').textContent=nome.split(' ')[0]
-    const pic=user.user_metadata?.avatar_url||user.user_metadata?.picture
-    if(pic){const img=document.createElement('img');img.src=pic;img.alt='';document.getElementById('avatar').replaceWith(img)}
-    else document.getElementById('avatar').textContent=nome.charAt(0).toUpperCase()
+  let u=null
+  try{const{data:{session}}=await sb.auth.getSession();if(!session){location.href='index.html';return}u=session.user}catch(e){}
+  if(u){
+    const nm=u.user_metadata?.full_name||u.user_metadata?.name||u.email||'Cliente'
+    document.getElementById('uname').textContent=nm
+    document.getElementById('fname').textContent=nm.split(' ')[0]
+    const p=u.user_metadata?.avatar_url||u.user_metadata?.picture
+    if(p){const i=document.createElement('img');i.src=p;i.alt='';document.getElementById('av').replaceWith(i)}
+    else document.getElementById('av').textContent=nm[0].toUpperCase()
   }
-  let diag=null
-  try{const{data,error}=await sb.from('diagnosticos').select('*').eq('cliente_id',user.id).order('atualizado_em',{ascending:false}).limit(1);if(!error&&data&&data.length)diag=data[0]}catch(e){}
-  if(!diag){diag=DEMO;document.getElementById('demoBadge').style.display='inline-flex'}
-  render(diag);reveal()
+  let d=null
+  try{const{data,error}=await sb.from('diagnosticos').select('*').eq('cliente_id',u.id).order('atualizado_em',{ascending:false}).limit(1);if(!error&&data?.length)d=data[0]}catch(e){}
+  if(!d){d=DEMO;document.getElementById('demoPill').style.display='inline-flex'}
+  render(d);reveal()
 }
 
 function render(d){
-  const scores=PILARES.map(p=>Number(d[p.key])||0)
-  const imek=d.imek!=null?Math.round(d.imek):Math.round(scores.reduce((a,b)=>a+b,0)/scores.length)
-  const niv=nivelDe(imek)
-  const C=2*Math.PI*64
-  document.getElementById('imekArc').style.stroke=niv.cor
-  setTimeout(()=>document.getElementById('imekArc').style.strokeDashoffset=C*(1-imek/100),150)
-  countUp(document.getElementById('imekVal'),imek)
-  document.getElementById('imekLevel').textContent=niv.nome
-  document.getElementById('imekDesc').textContent=niv.desc
-  document.getElementById('levelTrack').innerHTML=NIVEIS.map((n,i)=>`<div class="seg ${i<=NIVEIS.indexOf(niv)?'on':''}"></div>`).join('')
-  const grid=document.getElementById('grid')
-  grid.innerHTML=PILARES.map(p=>{const v=Number(d[p.key])||0,n=nivelDe(v);return`<div class="card"><div class="ico"><svg viewBox="0 0 24 24">${p.icon}</svg></div><h3>${p.nome}</h3><div class="src">${p.fonte}</div><div class="scoreline"><b data-t="${v}">0</b><em>/ 100</em></div><div class="lvl" style="color:${n.cor}">${n.nome}</div><div class="bar"><i data-w="${v}" style="background:${n.cor}"></i></div></div>`}).join('')
-  setTimeout(()=>grid.querySelectorAll('.card').forEach((c,i)=>setTimeout(()=>{c.classList.add('in');countUp(c.querySelector('b[data-t]'),+c.querySelector('b').dataset.t);const b=c.querySelector('i[data-w]');b.style.width=b.dataset.w+'%'},i*80)),200)
-  drawRadar(scores)
-  if(d.atualizado_em)document.getElementById('updated').textContent='Última atualização: '+new Date(d.atualizado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})
-  else if(d._demo)document.getElementById('updated').textContent='Exibindo dados de demonstração — grave um diagnóstico no Supabase para ver dados reais.'
+  const sc=PILARES.map(p=>+(d[p.key]||0))
+  const imek=d.imek!=null?Math.round(d.imek):Math.round(sc.reduce((a,b)=>a+b,0)/sc.length)
+  const lv=nv(imek)
+  const C=2*Math.PI*62
+  document.getElementById('arc').style.stroke=lv.c
+  setTimeout(()=>document.getElementById('arc').style.strokeDashoffset=C*(1-imek/100),200)
+  cu(document.getElementById('imekN'),imek)
+  document.getElementById('imekL').textContent=lv.n
+  document.getElementById('imekD').textContent=lv.d
+  document.getElementById('lvlTrack').innerHTML=NV.map((n,i)=>`<div class="s ${i<=NV.indexOf(lv)?'on':''}"></div>`).join('')
+  const g=document.getElementById('cardGrid')
+  g.innerHTML=PILARES.map(p=>{const v=+(d[p.key]||0),l=nv(v);return`<div class="card">
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.ico}</svg></div>
+    <h3>${p.n}</h3><div class="src">${p.s}</div>
+    <div class="scoreline"><b data-t="${v}">0</b><em>/ 100</em></div>
+    <div class="lv" style="color:${l.c}">${l.n}</div>
+    <div class="bar"><i data-w="${v}" style="background:${l.c}"></i></div>
+  </div>`}).join('')
+  setTimeout(()=>g.querySelectorAll('.card').forEach((c,i)=>setTimeout(()=>{
+    c.classList.add('in')
+    cu(c.querySelector('b[data-t]'),+c.querySelector('b').dataset.t)
+    const b=c.querySelector('i[data-w]');b.style.width=b.dataset.w+'%'
+  },i*80)),200)
+  drawRadar(sc)
+  if(d.atualizado_em)document.getElementById('upd').textContent='Última atualização: '+new Date(d.atualizado_em).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})
+  else if(d._demo)document.getElementById('upd').textContent='Dados de demonstração — grave um diagnóstico real no Supabase para ver os números.'
 }
 
 function drawRadar(s){
-  const sv=document.getElementById('radar'),cx=210,cy=185,R=125,N=6,ang=i=>(-90+i*60)*Math.PI/180,pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))]
+  const sv=document.getElementById('radar'),cx=210,cy=185,R=125,ang=i=>(-90+i*60)*Math.PI/180,pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))]
   let h=''
-  ;[.25,.5,.75,1].forEach(f=>{const p=s.map((_,i)=>pt(i,R*f).join(',')).join(' ');h+=`<polygon points="${p}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`})
-  PILARES.forEach((p,i)=>{const[x,y]=pt(i,R);h+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,.06)"/>`;const[lx,ly]=pt(i,R+22);const a=Math.abs(lx-cx)<6?'middle':(lx<cx?'end':'start');h+=`<text x="${lx}" y="${ly+4}" fill="rgba(247,250,252,.45)" font-size="11" font-weight="600" text-anchor="${a}" font-family="Inter">${p.short}</text>`})
+  ;[.25,.5,.75,1].forEach(f=>{const pts=s.map((_,i)=>pt(i,R*f).join(',')).join(' ');h+=`<polygon points="${pts}" fill="none" stroke="var(--border)" stroke-width="1"/>`})
+  PILARES.forEach((p,i)=>{const[x,y]=pt(i,R);h+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border)"/>`;const[lx,ly]=pt(i,R+22);const a=Math.abs(lx-cx)<6?'middle':lx<cx?'end':'start';h+=`<text x="${lx}" y="${ly+4}" fill="var(--text-faint)" font-size="11" font-weight="600" text-anchor="${a}" font-family="DM Sans">${p.sh}</text>`})
   const dp=s.map((v,i)=>pt(i,R*v/100).join(',')).join(' ')
   h+=`<polygon points="${dp}" fill="rgba(204,255,0,.15)" stroke="#CCFF00" stroke-width="2" stroke-linejoin="round"/>`
-  s.forEach((v,i)=>{const[x,y]=pt(i,R*v/100);h+=`<circle cx="${x}" cy="${y}" r="3.5" fill="#CCFF00"/>`})
+  s.forEach((v,i)=>{const[x,y]=pt(i,R*v/100);h+=`<circle cx="${x}" cy="${y}" r="3.5" fill="#CCFF00" filter="url(#glow)"/>`})
+  h=`<defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`+h
   sv.innerHTML=h
 }
 
-function countUp(el,t){const d=1100,t0=performance.now();(function f(n){const k=Math.min((n-t0)/d,1);el.textContent=Math.round(t*(1-Math.pow(1-k,3)));k<1&&requestAnimationFrame(f)})(t0)}
+function cu(el,t){const d=1100,t0=performance.now();(function f(n){const k=Math.min((n-t0)/d,1);el.textContent=Math.round(t*(1-Math.pow(1-k,3)));k<1&&requestAnimationFrame(f)})(t0)}
 function reveal(){document.getElementById('gate').style.opacity='0';setTimeout(()=>document.getElementById('gate').style.display='none',400);document.getElementById('shell').classList.add('ready')}
-document.getElementById('logout').addEventListener('click',async()=>{try{await sb.auth.signOut()}catch(e){};window.location.href=LOGIN_URL})
+document.getElementById('logout').addEventListener('click',async()=>{try{await sb.auth.signOut()}catch(e){};location.href='index.html'})
 boot()
 </script>
 </body>

@@ -601,15 +601,19 @@ function toggleGroup(el){el.classList.toggle('open');el.nextElementSibling.class
 // User boot
 let currentUser=null
 async function boot(){
-  try{const{data:{session}}=await sb.auth.getSession();if(!session){window.location.href=LOGIN_URL;return}
-  currentUser=session.user
-  const nome=currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||currentUser.email||'Cliente'
-  document.getElementById('uname').textContent=nome
-  const pic=currentUser.user_metadata?.avatar_url||currentUser.user_metadata?.picture
-  if(pic){const img=document.createElement('img');img.src=pic;img.alt='';document.getElementById('avatar').replaceWith(img)}
-  else document.getElementById('avatar').textContent=nome.charAt(0).toUpperCase()
-  }catch(e){}
-  reveal()
+  try{
+    const{data:{session}}=await sb.auth.getSession()
+    if(!session){window.location.href=LOGIN_URL;return}
+    currentUser=session.user
+    const nome=currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||currentUser.email||'Cliente'
+    try{document.getElementById('uname').textContent=nome}catch(e){}
+    const pic=currentUser.user_metadata?.avatar_url||currentUser.user_metadata?.picture
+    try{
+      if(pic){const img=document.createElement('img');img.src=pic;img.alt='';document.getElementById('avatar').replaceWith(img)}
+      else document.getElementById('avatar').textContent=nome.charAt(0).toUpperCase()
+    }catch(e){}
+  }catch(e){console.warn('Boot:',e)}
+  finally{reveal()}
 }
 function reveal(){document.getElementById('gate').style.opacity='0';setTimeout(()=>document.getElementById('gate').style.display='none',400);document.getElementById('shell').classList.add('ready')}
 document.getElementById('logout').addEventListener('click',async()=>{try{await sb.auth.signOut()}catch(e){};window.location.href=LOGIN_URL})

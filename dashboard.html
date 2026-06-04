@@ -517,20 +517,39 @@ const DEMO={_demo:1,score_experiencia:72,score_performance:64,score_financeiro:5
 const nv=v=>NV.find(n=>v>=n.lo&&v<=n.hi)||NV[0]
 
 async function boot(){
-  let u=null
-  try{const{data:{session}}=await sb.auth.getSession();if(!session){location.href='index.html';return}u=session.user}catch(e){}
-  if(u){
-    const nm=u.user_metadata?.full_name||u.user_metadata?.name||u.email||'Cliente'
-    document.getElementById('uname').textContent=nm
-    document.getElementById('fname').textContent=nm.split(' ')[0]
-    const p=u.user_metadata?.avatar_url||u.user_metadata?.picture
-    if(p){const i=document.createElement('img');i.src=p;i.alt='';document.getElementById('av').replaceWith(i)}
-    else document.getElementById('av').textContent=nm[0].toUpperCase()
+  try{
+    let u=null
+    try{
+      const{data:{session}}=await sb.auth.getSession()
+      if(!session){location.href='index.html';return}
+      u=session.user
+    }catch(e){console.warn('Auth:',e)}
+
+    if(u){
+      const nm=u.user_metadata?.full_name||u.user_metadata?.name||u.email||'Cliente'
+      try{document.getElementById('uname').textContent=nm}catch(e){}
+      try{document.getElementById('fname').textContent=nm.split(' ')[0]}catch(e){}
+      const p=u.user_metadata?.avatar_url||u.user_metadata?.picture
+      try{
+        if(p){const i=document.createElement('img');i.src=p;i.alt='';document.getElementById('av').replaceWith(i)}
+        else document.getElementById('av').textContent=nm[0].toUpperCase()
+      }catch(e){}
+    }
+
+    let d=null
+    try{
+      if(u){
+        const{data,error}=await sb.from('diagnosticos').select('*').eq('cliente_id',u.id).order('atualizado_em',{ascending:false}).limit(1)
+        if(!error&&data?.length)d=data[0]
+      }
+    }catch(e){console.warn('Diag:',e)}
+
+    if(!d){d=DEMO;try{document.getElementById('demoPill').style.display='inline-flex'}catch(e){}}
+    try{render(d)}catch(e){console.error('Render:',e)}
+
+  }finally{
+    reveal() // SEMPRE revela a tela, mesmo com erro
   }
-  let d=null
-  try{const{data,error}=await sb.from('diagnosticos').select('*').eq('cliente_id',u.id).order('atualizado_em',{ascending:false}).limit(1);if(!error&&data?.length)d=data[0]}catch(e){}
-  if(!d){d=DEMO;document.getElementById('demoPill').style.display='inline-flex'}
-  render(d);reveal()
 }
 
 function render(d){

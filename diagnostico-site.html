@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Keerp · Diagnóstico de Site</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --lime:#CCFF00;--bg:#121212;--text:#F7FAFC;
+  --text-dim:rgba(247,250,252,.62);--text-faint:rgba(247,250,252,.38);
+  --glass:rgba(255,255,255,.05);--glass-strong:rgba(255,255,255,.08);
+  --glass-hover:rgba(255,255,255,.11);
+  --border:rgba(255,255,255,.13);--border-soft:rgba(255,255,255,.07);
+  --shadow:0 40px 80px -20px rgba(0,0,0,.85);--glow:rgba(204,255,0,.15);
+  --ease:cubic-bezier(0,.22,1,.36);--r:28px;--sidebar:272px;
+  --good:#CCFF00;--warn:#ffce4d;--bad:#ff6b5e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.brand b{font-family:'Plus Jakarta Sans',sans-serif}
+#gate{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--bg);z-index:99;transition:opacity .4s}
+.spinner{width:34px;height:34px;border:3px solid rgba(204,255,0,.2);border-top-color:var(--lime);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh;opacity:0;transition:opacity .5s}
+.shell.ready{opacity:1}
+
+/* ─── SIDEBAR (same as dashboard) ─── */
+aside{border-right:1px solid var(--border-soft);background:rgba(18,18,18,.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:24px 20px 18px;border-bottom:1px solid var(--border-soft)}
+.brand .mark{width:32px;height:32px;border-radius:10px;background:var(--lime);display:grid;place-items:center;color:#0d0d0d;font-weight:800;font-size:18px;box-shadow:0 0 24px var(--glow);font-family:'Plus Jakarta Sans';flex:none}
+.brand b{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.nav-scroll{flex:1;padding:12px 12px 0;overflow-y:auto}
+.nav-cat-label{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);padding:14px 10px 6px;display:block}
+.nav-group{margin-bottom:1px}
+.nav-group-hd{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;cursor:pointer;transition:.18s var(--ease);color:var(--text-dim);font-size:14px;font-weight:600;user-select:none}
+.nav-group-hd:hover{background:var(--glass);color:var(--text)}
+.nav-group-hd.open{color:var(--text)}
+.nav-group-hd .ico{font-size:16px;flex:none;width:22px;text-align:center}
+.nav-group-hd .lbl{flex:1}
+.nav-group-hd .arr{font-size:10px;color:var(--text-faint);transition:.2s var(--ease)}
+.nav-group-hd.open .arr{transform:rotate(180deg)}
+.nav-group-body{max-height:0;overflow:hidden;transition:max-height .3s var(--ease)}
+.nav-group-body.open{max-height:600px}
+.nav-group-body a{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 34px;border-radius:10px;font-size:13.5px;color:var(--text-dim);text-decoration:none;transition:.15s var(--ease);margin-bottom:1px;font-weight:500}
+.nav-group-body a:hover{background:var(--glass);color:var(--text)}
+.nav-group-body a.active{background:var(--lime);color:#0d0d0d;font-weight:700}
+.nav-group-body a .dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;opacity:.6}
+.nav-group-body a.active .dot{opacity:1}
+.soon{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);border:1px solid var(--border-soft);padding:1px 5px;border-radius:4px;margin-left:auto}
+.nav-div{height:1px;background:var(--border-soft);margin:8px 10px}
+.side-foot{padding:14px 12px 20px;border-top:1px solid var(--border-soft)}
+.user-row{display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;margin-bottom:8px;background:var(--glass);border:1px solid var(--border-soft)}
+.user-row img,.user-row .avatar-ph{width:34px;height:34px;border-radius:10px;object-fit:cover;background:var(--glass-strong);display:grid;place-items:center;font-weight:700;color:var(--lime);font-size:13px;font-family:'Plus Jakarta Sans';flex:none}
+.user-row .meta{overflow:hidden;flex:1}
+.user-row .meta b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Plus Jakarta Sans'}
+.user-row .meta span{font-size:11px;color:var(--text-faint)}
+.logout{width:100%;background:none;border:1px solid var(--border-soft);color:var(--text-dim);padding:9px;border-radius:12px;font:inherit;font-size:13px;cursor:pointer;transition:.18s}
+.logout:hover{border-color:#ff6b5e;color:#ff6b5e}
+
+/* ─── MAIN ─── */
+main{padding:40px 48px 64px;max-width:1100px}
+
+/* Breadcrumb */
+.bc{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);margin-bottom:28px}
+.bc a{color:var(--lime);text-decoration:none}.bc a:hover{text-decoration:underline}
+.bc .sep{color:var(--text-faint)}
+
+.topline{margin-bottom:32px}
+.topline h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin-bottom:6px}
+.topline p{color:var(--text-dim);font-size:14.5px}
+
+/* SEARCH BOX */
+.search-box{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:28px 32px;margin-bottom:28px;box-shadow:var(--shadow)}
+.search-box label{font-size:13px;font-weight:600;color:var(--text-dim);display:block;margin-bottom:10px}
+.search-row{display:flex;gap:12px}
+.domain-input{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:14px;padding:14px 18px;color:var(--text);font:inherit;font-size:15px;outline:none;transition:.2s}
+.domain-input::placeholder{color:var(--text-faint)}
+.domain-input:focus{border-color:rgba(204,255,0,.5);background:rgba(255,255,255,.08);box-shadow:0 0 0 3px rgba(204,255,0,.08)}
+.btn-analisar{background:var(--lime);color:#0d0d0d;border:none;border-radius:14px;padding:14px 28px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.22s var(--ease);white-space:nowrap}
+.btn-analisar:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--glow)}
+.btn-analisar:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+
+/* LOADING STATE */
+#loadingState{display:none;align-items:center;gap:14px;padding:20px 0;color:var(--text-dim);font-size:14px}
+.load-spin{width:24px;height:24px;border:2.5px solid rgba(204,255,0,.2);border-top-color:var(--lime);border-radius:50%;animation:spin .8s linear infinite;flex:none}
+
+/* ERROR */
+.error-msg{background:rgba(255,107,94,.08);border:1px solid rgba(255,107,94,.25);border-radius:14px;padding:16px 20px;color:#ff6b5e;font-size:14px;display:none}
+
+/* RESULTS */
+#results{display:none}
+
+/* Score hero */
+.score-hero{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.score-card{border-radius:20px;padding:22px;border:1px solid var(--border-soft);background:var(--glass);text-align:center;position:relative;overflow:hidden}
+.score-card.primary{background:linear-gradient(135deg,rgba(204,255,0,.08),rgba(204,255,0,.02));border-color:var(--border)}
+.score-card .sc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:10px}
+.score-card .sc-num{font-size:44px;font-weight:800;letter-spacing:-.04em;font-family:'Plus Jakarta Sans';line-height:1}
+.score-card .sc-sub{font-size:12px;color:var(--text-dim);margin-top:6px}
+.score-card .sc-badge{display:inline-block;padding:4px 12px;border-radius:50px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:10px}
+
+/* Metrics grid */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--glass);border:1px solid var(--border-soft);border-radius:18px;padding:18px 20px}
+.metric-card .m-name{font-size:12px;color:var(--text-dim);margin-bottom:4px;font-weight:500}
+.metric-card .m-abbr{font-size:11px;color:var(--text-faint);margin-bottom:12px}
+.metric-card .m-val{font-size:24px;font-weight:800;letter-spacing:-.02em;font-family:'Plus Jakarta Sans';margin-bottom:6px}
+.metric-card .m-status{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:50px}
+.metric-card .m-ref{font-size:11px;color:var(--text-faint);margin-top:8px}
+
+/* Opportunities */
+.opportunities{background:var(--glass);border:1px solid var(--border-soft);border-radius:var(--r);padding:24px;margin-bottom:20px}
+.opportunities h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.opportunities .sub{font-size:13px;color:var(--text-dim);margin-bottom:16px}
+.opp-item{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-soft)}
+.opp-item:last-child{border-bottom:none;padding-bottom:0}
+.opp-impact{flex:none;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:50px;margin-top:2px}
+.opp-content .opp-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.opp-content .opp-desc{font-size:13px;color:var(--text-dim);line-height:1.5}
+.opp-savings{font-size:12px;color:var(--lime);margin-top:4px;font-weight:600}
+
+/* History */
+.history{background:var(--glass);border:1px solid var(--border-soft);border-radius:var(--r);padding:24px}
+.history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.history-header h3{font-size:15px;font-weight:700}
+.history table{width:100%;border-collapse:collapse}
+.history th{font-size:11.5px;font-weight:600;color:var(--text-faint);text-align:left;padding:0 12px 12px;text-transform:uppercase;letter-spacing:.06em}
+.history td{font-size:13.5px;padding:12px;border-top:1px solid var(--border-soft);vertical-align:middle}
+.history tr:first-child td{border-top:none}
+.history tr:hover td{background:rgba(255,255,255,.02)}
+.score-pill{display:inline-block;padding:3px 10px;border-radius:50px;font-size:12px;font-weight:700}
+.btn-view{background:none;border:1px solid var(--border-soft);color:var(--text-dim);padding:5px 14px;border-radius:8px;font:inherit;font-size:12px;cursor:pointer;transition:.15s}
+.btn-view:hover{border-color:var(--lime);color:var(--lime)}
+.empty-history{text-align:center;padding:32px;color:var(--text-faint);font-size:13.5px}
+</style>
+</head>
+<body>
+<div id="gate"><div class="spinner"></div></div>
+
+<div class="shell" id="shell">
+  <aside>
+    <div class="brand"><div class="mark">K</div><b>Keerp</b></div>
+    <div class="nav-scroll">
+      <div class="nav-cat">
+        <span class="nav-cat-label">Diagnóstico</span>
+        <div class="nav-group">
+          <div class="nav-group-hd open" onclick="toggleGroup(this)">
+            <span class="ico">🌐</span><span class="lbl">Site</span><span class="arr">▼</span>
+          </div>
+          <div class="nav-group-body open">
+            <a href="diagnostico-site.html" class="active"><span class="dot"></span>Performance</a>
+            <a href="#"><span class="dot"></span>Mobile<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>SEO & Acessibilidade<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Histórico<span class="soon">breve</span></a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-hd" onclick="toggleGroup(this)">
+            <span class="ico">📱</span><span class="lbl">Redes Sociais</span><span class="arr">▼</span>
+          </div>
+          <div class="nav-group-body">
+            <a href="#"><span class="dot"></span>Instagram<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>TikTok<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Meta / Facebook<span class="soon">breve</span></a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-hd" onclick="toggleGroup(this)">
+            <span class="ico">📦</span><span class="lbl">Operação</span><span class="arr">▼</span>
+          </div>
+          <div class="nav-group-body">
+            <a href="#"><span class="dot"></span>Vendas<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Picking & Packing<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Transporte<span class="soon">breve</span></a>
+          </div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-hd" onclick="toggleGroup(this)">
+            <span class="ico">💝</span><span class="lbl">Relacionamento</span><span class="arr">▼</span>
+          </div>
+          <div class="nav-group-body">
+            <a href="#"><span class="dot"></span>NPS<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Retenção<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>SAC & Feedback<span class="soon">breve</span></a>
+          </div>
+        </div>
+      </div>
+      <div class="nav-div"></div>
+      <div class="nav-cat">
+        <span class="nav-cat-label">Cadastro</span>
+        <div class="nav-group">
+          <div class="nav-group-hd" onclick="toggleGroup(this)">
+            <span class="ico">📋</span><span class="lbl">Gestão</span><span class="arr">▼</span>
+          </div>
+          <div class="nav-group-body">
+            <a href="#"><span class="dot"></span>Clientes<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Usuários<span class="soon">breve</span></a>
+          </div>
+        </div>
+      </div>
+      <div class="nav-div"></div>
+      <div class="nav-cat">
+        <span class="nav-cat-label">Inteligência</span>
+        <div class="nav-group">
+          <div class="nav-group-hd" onclick="toggleGroup(this)">
+            <span class="ico">🤖</span><span class="lbl">KeerpIA</span><span class="arr">▼</span>
+          </div>
+          <div class="nav-group-body">
+            <a href="#"><span class="dot"></span>Chat<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Configuração<span class="soon">breve</span></a>
+          </div>
+        </div>
+      </div>
+      <div class="nav-div"></div>
+      <div class="nav-cat">
+        <span class="nav-cat-label">Sistema</span>
+        <div class="nav-group">
+          <div class="nav-group-hd" onclick="toggleGroup(this)">
+            <span class="ico">⚙️</span><span class="lbl">Configurações</span><span class="arr">▼</span>
+          </div>
+          <div class="nav-group-body">
+            <a href="#"><span class="dot"></span>Notificações<span class="soon">breve</span></a>
+            <a href="#"><span class="dot"></span>Configuração<span class="soon">breve</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="side-foot">
+      <div class="user-row">
+        <div class="avatar-ph" id="avatar">—</div>
+        <div class="meta"><b id="uname">Carregando…</b><span>Cliente Keerp</span></div>
+      </div>
+      <button class="logout" id="logout">Sair da conta</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="bc">
+      <a href="dashboard.html">Dashboard</a>
+      <span class="sep">/</span>
+      <span>Diagnóstico</span>
+      <span class="sep">/</span>
+      <span>Site · Performance</span>
+    </div>
+
+    <div class="topline">
+      <h1>Diagnóstico de Site</h1>
+      <p>Análise de performance em tempo real — dados direto do Google PageSpeed Insights.</p>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="search-box">
+      <label>Domínio do cliente</label>
+      <div class="search-row">
+        <input class="domain-input" id="domainInput" type="text"
+          placeholder="ex: minhaloja.com.br" autocomplete="off" autocorrect="off" spellcheck="false"/>
+        <button class="btn-analisar" id="btnAnalisar" onclick="analisar()">⚡ Analisar</button>
+      </div>
+      <div id="loadingState" style="display:none;align-items:center;gap:14px;padding:16px 0 0">
+        <div class="load-spin"></div>
+        <span style="color:var(--text-dim);font-size:14px">Consultando Google PageSpeed… pode levar 8-12 segundos.</span>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- RESULTS -->
+    <div id="results">
+
+      <!-- Score hero -->
+      <div class="score-hero" id="scoreHero"></div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid" id="metricsGrid"></div>
+
+      <!-- Opportunities -->
+      <div class="opportunities" id="oppsSection">
+        <h3>🔧 Principais Oportunidades</h3>
+        <div class="sub">Melhorias com maior impacto no score de performance.</div>
+        <div id="oppsList"></div>
+      </div>
+
+      <!-- History -->
+      <div class="history">
+        <div class="history-header">
+          <h3>📋 Histórico de Análises</h3>
+          <span style="font-size:13px;color:var(--text-dim)" id="historyDomain"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data & Hora</th>
+              <th>Domínio</th>
+              <th>Mobile</th>
+              <th>Desktop</th>
+              <th>LCP</th>
+              <th>CLS</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div class="empty-history" id="emptyHistory" style="display:none">
+          Nenhuma análise anterior para este domínio. Execute a primeira análise acima.
+        </div>
+      </div>
+
+    </div><!-- /results -->
+  </main>
+</div>
+
+<script>
+const SUPA_URL='https://ajgeeuezpfxhsjmankne.supabase.co'
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZ2VldWV6cGZ4aHNqbWFua25lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzc3NzgsImV4cCI6MjA5NTkxMzc3OH0.KDRLr0UWxsvfYUnW6ImC3d5GEPJRY0Qxx8q-ghzQeWA'
+const LOGIN_URL='index.html'
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY)
+
+// Nav toggle
+function toggleGroup(el){el.classList.toggle('open');el.nextElementSibling.classList.toggle('open')}
+
+// User boot
+let currentUser=null
+async function boot(){
+  try{const{data:{session}}=await sb.auth.getSession();if(!session){window.location.href=LOGIN_URL;return}
+  currentUser=session.user
+  const nome=currentUser.user_metadata?.full_name||currentUser.user_metadata?.name||currentUser.email||'Cliente'
+  document.getElementById('uname').textContent=nome
+  const pic=currentUser.user_metadata?.avatar_url||currentUser.user_metadata?.picture
+  if(pic){const img=document.createElement('img');img.src=pic;img.alt='';document.getElementById('avatar').replaceWith(img)}
+  else document.getElementById('avatar').textContent=nome.charAt(0).toUpperCase()
+  }catch(e){}
+  reveal()
+}
+function reveal(){document.getElementById('gate').style.opacity='0';setTimeout(()=>document.getElementById('gate').style.display='none',400);document.getElementById('shell').classList.add('ready')}
+document.getElementById('logout').addEventListener('click',async()=>{try{await sb.auth.signOut()}catch(e){};window.location.href=LOGIN_URL})
+document.getElementById('domainInput').addEventListener('keydown',e=>{if(e.key==='Enter')analisar()})
+
+// ── STATUS helpers ──
+const metaStatus={
+  lcp:{good:2.5,needs:4,unit:'s',name:'Maior Conteúdo Visível',abbr:'LCP — Largest Contentful Paint',ref:'Bom < 2.5s'},
+  inp:{good:200,needs:500,unit:'ms',name:'Resposta a Interações',abbr:'INP — Interaction to Next Paint',ref:'Bom < 200ms'},
+  cls:{good:.1,needs:.25,unit:'',name:'Estabilidade Visual',abbr:'CLS — Cumulative Layout Shift',ref:'Bom < 0.1'},
+  ttfb:{good:.8,needs:1.8,unit:'s',name:'Tempo de Resposta',abbr:'TTFB — Time to First Byte',ref:'Bom < 0.8s'},
+  fcp:{good:1.8,needs:3,unit:'s',name:'Primeira Tinta',abbr:'FCP — First Contentful Paint',ref:'Bom < 1.8s'},
+}
+
+function getStatus(key,val){
+  const m=metaStatus[key]
+  if(!m)return{label:'—',color:'var(--text-dim)',bg:'var(--glass)'}
+  const v=parseFloat(val)
+  if(isNaN(v))return{label:'—',color:'var(--text-dim)',bg:'var(--glass)'}
+  if(v<=m.good)return{label:'✓ Bom',color:'var(--good)',bg:'rgba(204,255,0,.1)'}
+  if(v<=m.needs)return{label:'⚠ Melhorar',color:'var(--warn)',bg:'rgba(255,206,77,.1)'}
+  return{label:'✕ Ruim',color:'var(--bad)',bg:'rgba(255,107,94,.1)'}
+}
+
+function scoreBadge(s){
+  if(s>=90)return{label:'Ótimo',color:'var(--good)',bg:'rgba(204,255,0,.12)'}
+  if(s>=70)return{label:'Bom',color:'var(--warn)',bg:'rgba(255,206,77,.12)'}
+  if(s>=50)return{label:'Melhorar',color:'#ff9d4d',bg:'rgba(255,157,77,.12)'}
+  return{label:'Crítico',color:'var(--bad)',bg:'rgba(255,107,94,.12)'}
+}
+
+// ── PAGESPEED FETCH ──
+async function fetchPS(url,strategy){
+  const apiUrl=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&fields=lighthouseResult(categories/performance/score,audits(largest-contentful-paint,interaction-to-next-paint,cumulative-layout-shift,server-response-time,first-contentful-paint,opportunities,diagnostics))`
+  const r=await fetch(apiUrl)
+  if(!r.ok)throw new Error('Erro na API do Google. Verifique o domínio e tente novamente.')
+  return r.json()
+}
+
+function parseMetrics(lh){
+  const a=lh.audits
+  const gNum=key=>{const v=a[key]?.numericValue;return v!=null?v:null}
+  return{
+    score:Math.round((lh.categories.performance.score||0)*100),
+    lcp:gNum('largest-contentful-paint'),
+    inp:gNum('interaction-to-next-paint')||gNum('total-blocking-time'),
+    cls:gNum('cumulative-layout-shift'),
+    ttfb:gNum('server-response-time'),
+    fcp:gNum('first-contentful-paint'),
+    opportunities:(a.opportunities||a['uses-optimized-images'])
+  }
+}
+
+// ── MAIN ANALYZE ──
+async function analisar(){
+  const raw=document.getElementById('domainInput').value.trim()
+  if(!raw)return
+  let domain=raw.replace(/^https?:\/\//,'').replace(/\/.*$/,'').toLowerCase()
+  const url='https://'+domain
+
+  document.getElementById('errorMsg').style.display='none'
+  document.getElementById('results').style.display='none'
+  document.getElementById('loadingState').style.display='flex'
+  document.getElementById('btnAnalisar').disabled=true
+
+  try{
+    // Fetch mobile + desktop in parallel
+    const[mobData,deskData]=await Promise.all([fetchPS(url,'mobile'),fetchPS(url,'desktop')])
+    const mob=parseMetrics(mobData.lighthouseResult)
+    const desk=parseMetrics(deskData.lighthouseResult)
+    const overall=Math.round((mob.score+desk.score)/2)
+
+    // Render results
+    renderScores(domain,mob,desk,overall)
+    renderMetrics(mob,desk)
+    renderOpportunities(mobData.lighthouseResult)
+    document.getElementById('results').style.display='block'
+
+    // Save to Supabase
+    if(currentUser){saveAudit(domain,mob,desk,overall,mobData.lighthouseResult)}
+
+    // Load history
+    loadHistory(domain)
+
+  }catch(err){
+    document.getElementById('errorMsg').textContent='Erro: '+err.message
+    document.getElementById('errorMsg').style.display='block'
+  }finally{
+    document.getElementById('loadingState').style.display='none'
+    document.getElementById('btnAnalisar').disabled=false
+  }
+}
+
+function renderScores(domain,mob,desk,overall){
+  const ob=scoreBadge(overall),mb=scoreBadge(mob.score),db=scoreBadge(desk.score)
+  document.getElementById('scoreHero').innerHTML=`
+    <div class="score-card primary">
+      <div class="sc-label">Score Geral</div>
+      <div class="sc-num" style="color:${ob.color}">${overall}</div>
+      <div class="sc-sub">Média mobile + desktop</div>
+      <span class="sc-badge" style="background:${ob.bg};color:${ob.color}">${ob.label}</span>
+    </div>
+    <div class="score-card">
+      <div class="sc-label">📱 Mobile</div>
+      <div class="sc-num" style="color:${mb.color}">${mob.score}</div>
+      <div class="sc-sub">Google PageSpeed</div>
+      <span class="sc-badge" style="background:${mb.bg};color:${mb.color}">${mb.label}</span>
+    </div>
+    <div class="score-card">
+      <div class="sc-label">🖥️ Desktop</div>
+      <div class="sc-num" style="color:${db.color}">${desk.score}</div>
+      <div class="sc-sub">Google PageSpeed</div>
+      <span class="sc-badge" style="background:${db.bg};color:${db.color}">${db.label}</span>
+    </div>
+  `
+}
+
+function renderMetrics(mob,desk){
+  const keys=['lcp','inp','cls','ttfb','fcp']
+  const units={lcp:'s',inp:'ms',cls:'',ttfb:'s',fcp:'s'}
+  const div=1000 // convert ms to s for lcp,fcp,ttfb
+  document.getElementById('metricsGrid').innerHTML=keys.map(k=>{
+    const rawMob=mob[k],rawDesk=desk[k]
+    const isMs=(k==='inp')
+    const fmt=v=>{if(v==null)return'—';return isMs?Math.round(v)+'ms':(v/1000).toFixed(2)+'s'}
+    const fmtVal=v=>{if(v==null)return null;return isMs?v:v/1000}
+    const st=getStatus(k,fmtVal(rawMob))
+    const m=metaStatus[k]
+    return`<div class="metric-card">
+      <div class="m-name">${m.name}</div>
+      <div class="m-abbr">${m.abbr}</div>
+      <div class="m-val" style="color:${st.color}">${fmt(rawMob)}</div>
+      <span class="m-status" style="background:${st.bg};color:${st.color}">${st.label}</span>
+      <div class="m-ref">${m.ref} · Desktop: ${fmt(rawDesk)}</div>
+    </div>`
+  }).join('')
+}
+
+function renderOpportunities(lh){
+  const opps=lh.audits
+  const items=Object.values(opps).filter(a=>a.details?.type==='opportunity'&&a.details?.overallSavingsMs>500)
+    .sort((a,b)=>(b.details.overallSavingsMs||0)-(a.details.overallSavingsMs||0))
+    .slice(0,5)
+  if(!items.length){document.getElementById('oppsSection').style.display='none';return}
+  document.getElementById('oppsSection').style.display='block'
+  document.getElementById('oppsList').innerHTML=items.map(a=>{
+    const sav=a.details.overallSavingsMs
+    const impact=sav>2000?{label:'Alto',c:'var(--bad)',bg:'rgba(255,107,94,.12)'}:sav>800?{label:'Médio',c:'var(--warn)',bg:'rgba(255,206,77,.12)'}:{label:'Baixo',c:'var(--lime)',bg:'rgba(204,255,0,.12)'}
+    return`<div class="opp-item">
+      <span class="opp-impact" style="background:${impact.bg};color:${impact.c}">${impact.label}</span>
+      <div class="opp-content">
+        <div class="opp-title">${a.title}</div>
+        <div class="opp-desc">${a.description?.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').substring(0,160)||''}</div>
+        ${sav?`<div class="opp-savings">Economia estimada: ~${(sav/1000).toFixed(1)}s</div>`:''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── SUPABASE ──
+async function saveAudit(domain,mob,desk,overall,lh){
+  try{
+    const opps=Object.values(lh.audits)
+      .filter(a=>a.details?.type==='opportunity'&&a.details?.overallSavingsMs>500)
+      .slice(0,5)
+      .map(a=>({title:a.title,savings_ms:a.details.overallSavingsMs}))
+    await sb.from('diagnosticos_site').insert({
+      cliente_id:currentUser.id,
+      domain,
+      score_mobile:mob.score,score_desktop:desk.score,score_geral:overall,
+      lcp_mobile:mob.lcp?Math.round(mob.lcp):null,lcp_desktop:desk.lcp?Math.round(desk.lcp):null,
+      inp_mobile:mob.inp?Math.round(mob.inp):null,inp_desktop:desk.inp?Math.round(desk.inp):null,
+      cls_mobile:mob.cls!=null?mob.cls:null,cls_desktop:desk.cls!=null?desk.cls:null,
+      ttfb_mobile:mob.ttfb?Math.round(mob.ttfb):null,ttfb_desktop:desk.ttfb?Math.round(desk.ttfb):null,
+      fcp_mobile:mob.fcp?Math.round(mob.fcp):null,fcp_desktop:desk.fcp?Math.round(desk.fcp):null,
+      oportunidades:opps,criado_por:currentUser.id
+    })
+  }catch(e){console.log('Save audit:',e.message)}
+}
+
+async function loadHistory(domain){
+  document.getElementById('historyDomain').textContent=domain
+  try{
+    const{data}=await sb.from('diagnosticos_site')
+      .select('*').eq('domain',domain).eq('cliente_id',currentUser.id)
+      .order('auditado_em',{ascending:false}).limit(10)
+    const tb=document.getElementById('historyBody')
+    const em=document.getElementById('emptyHistory')
+    if(!data||!data.length){tb.innerHTML='';em.style.display='block';return}
+    em.style.display='none'
+    const fmt=v=>v!=null?Math.round(v):'—'
+    const clsF=v=>v!=null?Number(v).toFixed(3):'—'
+    tb.innerHTML=data.map(r=>{
+      const dt=new Date(r.auditado_em)
+      const dtStr=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+      const mb=scoreBadge(r.score_mobile||0)
+      const db=scoreBadge(r.score_desktop||0)
+      return`<tr>
+        <td>${dtStr}</td>
+        <td style="color:var(--text-dim)">${r.domain}</td>
+        <td><span class="score-pill" style="background:${mb.bg};color:${mb.color}">${fmt(r.score_mobile)}</span></td>
+        <td><span class="score-pill" style="background:${db.bg};color:${db.color}">${fmt(r.score_desktop)}</span></td>
+        <td style="color:var(--text-dim)">${r.lcp_mobile!=null?(r.lcp_mobile/1000).toFixed(2)+'s':'—'}</td>
+        <td style="color:var(--text-dim)">${r.cls_mobile!=null?Number(r.cls_mobile).toFixed(3):'—'}</td>
+        <td><button class="btn-view">Ver</button></td>
+      </tr>`
+    }).join('')
+  }catch(e){console.log('History:',e)}
+}
+
+boot()
+</script>
+</body>
+</html>

@@ -1,6 +1,4 @@
-const Anthropic = require("@anthropic-ai/sdk").default;
-
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Apenas GET é suportado
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não suportado" });
@@ -19,6 +17,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // Importa dinâmico do SDK
+    const { Anthropic } = await import("@anthropic-ai/sdk");
+    
     const client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
@@ -47,7 +48,6 @@ Seja direto, prático e cite números/dados quando possível. Respostas curtas (
     console.error("Erro KeerpIA:", error);
     return res.status(500).json({
       error: error.message || "Erro ao processar mensagem",
-      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
-};
+}

@@ -1,5 +1,14 @@
 export default async function handler(req, res) {
-  // Apenas GET é suportado
+  // CORS — permite chamadas do GitHub Pages e Vercel
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Preflight request
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não suportado" });
   }
@@ -10,44 +19,40 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Mensagem vazia" });
   }
 
-  // Verifica se a chave de API existe
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("ANTHROPIC_API_KEY não configurada");
-    return res.status(500).json({ error: "Configuração de API não encontrada" });
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: "API key não configurada" });
   }
 
   try {
-    // Importa dinâmico do SDK
-    const { Anthropic } = await import("@anthropic-ai/sdk");
-    
-    const client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 600,
+        system: `Você é KeerpIA, assistente especializado em diagnósticos digitais e ecommerce para a plataforma Keerp. Seja direto, prático e cite números/dados quando possível. Respostas curtas (2-3 frases máximo).`,
+        messages: [{ role: "user", content: msg.trim() }],
+      }),
     });
 
-    const message = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 600,
-      system: `Você é KeerpIA, assistente especializado em diagnósticos digitais e ecommerce para a plataforma Keerp.
+    const data = await response.json();
 
-Sua função: responder perguntas sobre performance de site, SEO, estratégia digital, diagnósticos e recomendações de melhoria.
-
-Seja direto, prático e cite números/dados quando possível. Respostas curtas (2-3 frases máximo).`,
-      messages: [
-        {
-          role: "user",
-          content: msg.trim(),
-        },
-      ],
-    });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.message || "Erro na API" });
+    }
 
     return res.status(200).json({
-      response: message.content[0].text,
+      response: data.content[0].text,
       success: true,
     });
+
   } catch (error) {
-    console.error("Erro KeerpIA:", error);
-    return res.status(500).json({
-      error: error.message || "Erro ao processar mensagem",
-    });
+    return res.status(500).json({ error: error.message || "Erro ao processar" });
   }
 }
